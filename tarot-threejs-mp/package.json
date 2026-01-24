@@ -1,0 +1,28 @@
+{
+  "name": "tarot-threejs-mp",
+  "version": "1.0.0",
+  "description": "A tarot card drawing game using Three.js and MediaPipe Hands for gesture recognition.",
+  "main": "index.html",
+  "scripts": {
+    "start": "live-server",
+    "build": "webpack"
+  },
+  "dependencies": {
+    "three": "^0.136.0",
+    "@mediapipe/hands": "^0.4.0"
+  },
+  "devDependencies": {
+    "live-server": "^1.2.1",
+    "webpack": "^5.64.4",
+    "webpack-cli": "^4.9.1"
+  },
+  "keywords": [
+    "tarot",
+    "threejs",
+    "mediapipe",
+    "gesture",
+    "game"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}
