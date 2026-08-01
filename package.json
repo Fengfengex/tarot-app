@@ -2,7 +2,7 @@
   "name": "tarot-threejs-mp",
   "version": "1.0.0",
   "type": "module",
-  "description": "A tarot card drawing game using Three.js and MediaPipe Hands for gesture recognition.",
+  "description": "A tarot card drawing game using Three.js and MediaPipe Tasks Vision for gesture recognition.",
   "main": "index.html",
   "scripts": {
     "dev": "vite",
