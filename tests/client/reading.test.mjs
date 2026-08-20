@@ -5,8 +5,8 @@ import { READING_TOPICS, createReadingController } from '../../src/client/readin
 const card = { cardName: 'The Fool', orientation: 'upright', standardMeaning: '新的开始。' };
 const result = { headline: '标题', reading: '解读', action: '行动', disclaimer: '仅供娱乐。' };
 
-test('exposes exactly five fixed topics and defaults to general', async () => {
-  assert.deepEqual(Object.keys(READING_TOPICS), ['general', 'love', 'career', 'wealth', 'growth']);
+test('exposes the Tarotoo topic fields and defaults to general', async () => {
+  assert.deepEqual(Object.keys(READING_TOPICS), ['general', 'love', 'career', 'mood', 'spiritual']);
   let sent;
   const controller = createReadingController({
     fetchImpl: async (_url, init) => { sent = JSON.parse(init.body); return new Response(JSON.stringify(result), { status: 200 }); },

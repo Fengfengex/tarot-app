@@ -1,4 +1,4 @@
-export const READING_TOPICS = Object.freeze({ general: '综合', love: '感情', career: '事业', wealth: '财运', growth: '成长' });
+export const READING_TOPICS = Object.freeze({ general: '综合', love: '感情', career: '事业', mood: '心境', spiritual: '灵性' });
 
 export function createReadingController({ fetchImpl = globalThis.fetch, view }) {
   let topic = 'general';

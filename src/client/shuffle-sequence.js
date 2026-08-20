@@ -1,9 +1,9 @@
-const NORMAL_PHASES = ['converge', 'sphere', 'orbit', 'cut', 'merge'];
-const REDUCED_PHASES = ['converge', 'merge'];
-const NORMAL_DURATIONS = Object.freeze({ converge: 0.45, sphere: 0.8, orbit: 1.4, cut: 0.55, merge: 0.9 });
-const REDUCED_DURATIONS = Object.freeze({ converge: 0.25, merge: 0.35 });
+const PHASES = ['gather', 'collapse'];
+const NORMAL_DURATIONS = Object.freeze({ gather: 2.8, collapse: 1.05 });
+const REDUCED_DURATIONS = Object.freeze({ gather: 0.7, collapse: 0.35 });
 const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
 
+const clamp01 = value => Math.max(0, Math.min(1, value));
 const smoothstep = value => value * value * (3 - 2 * value);
 const mix = (from, to, amount) => from + (to - from) * amount;
 const point = (x = 0, y = 0, z = 0) => ({ x, y, z });
@@ -15,22 +15,14 @@ function write(target, value) {
 }
 
 function interpolate(target, from, to, amount) {
-  write(target, point(
-    mix(from.x, to.x, amount),
-    mix(from.y, to.y, amount),
-    mix(from.z, to.z, amount),
-  ));
+  write(target, point(mix(from.x, to.x, amount), mix(from.y, to.y, amount), mix(from.z, to.z, amount)));
 }
 
-function deckTarget(index, deckY, order = index) {
-  return {
-    position: point(0, deckY, order * 0.006),
-    rotation: point(),
-    scale: point(1, 1, 1),
-  };
+function deckTarget(index, deckY) {
+  return { position: point(0, deckY, index * 0.006), rotation: point(), scale: point(1, 1, 1) };
 }
 
-function sphereTarget(index, count, radius) {
+function spherePoint(index, count, radius) {
   const y = 1 - (2 * (index + 0.5)) / count;
   const horizontal = Math.sqrt(Math.max(0, 1 - y * y));
   const angle = index * GOLDEN_ANGLE;
@@ -41,81 +33,73 @@ function sphereTarget(index, count, radius) {
   };
 }
 
-function cutTarget(index, deckY) {
-  const pileIndex = Math.floor(index / 2);
-  const side = index % 2 === 0 ? -1 : 1;
+function outsidePoint(index, count, radius) {
+  const angle = (index / count) * Math.PI * 2 + (index % 5) * 0.17;
+  // Keep every starting point beyond the camera frustum, including diagonal angles.
+  const distance = radius * (5.2 + (index % 4) * 0.18);
   return {
-    position: point(side * 1.35, deckY + pileIndex * 0.002, pileIndex * 0.008),
-    rotation: point(0, side * 0.08, side * 0.07),
-    scale: point(0.34, 0.34, 0.34),
+    position: point(Math.cos(angle) * distance, Math.sin(angle) * distance * 0.85, 0.4 - (index % 4) * 0.12),
+    rotation: point((index % 3 - 1) * 0.45, angle, (index % 9 - 4) * 0.12),
+    scale: point(0.16, 0.16, 0.16),
+  };
+}
+
+function rotatedSphereTarget(base, angle, index) {
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  return {
+    position: point(base.position.x * cos - base.position.z * sin, base.position.y, base.position.x * sin + base.position.z * cos),
+    rotation: point(base.rotation.x, base.rotation.y + angle, base.rotation.z + Math.sin(angle + index) * 0.035),
+    scale: base.scale,
   };
 }
 
 function snapshot(cards) {
-  return cards.map(card => ({
-    position: read(card.position),
-    rotation: read(card.rotation),
-    scale: read(card.scale),
-  }));
+  return cards.map(card => ({ position: read(card.position), rotation: read(card.rotation), scale: read(card.scale) }));
 }
 
 export function createShuffleSequence({ reducedMotion = false, radius = 3.4, deckY = -2 } = {}) {
-  const phases = reducedMotion ? REDUCED_PHASES : NORMAL_PHASES;
   const durations = reducedMotion ? REDUCED_DURATIONS : NORMAL_DURATIONS;
   let cards = [];
+  let sphereTargets = [];
+  let outsideTargets = [];
+  let collapseStarts = [];
   let phaseIndex = -1;
   let elapsed = 0;
-  let phaseStart = [];
-  let phaseTargets = [];
   let completed = false;
   let completionCallback = () => {};
   let state = { phase: 'idle', active: false, ready: false, progress: 0, orbitAngle: 0 };
-  let sphereTargets = [];
-
-  function targetsFor(phase) {
-    if (phase === 'converge' || phase === 'merge') return cards.map((_, index) => deckTarget(index, deckY));
-    if (phase === 'sphere') return sphereTargets;
-    if (phase === 'cut') return cards.map((_, index) => cutTarget(index, deckY));
-    return snapshot(cards);
-  }
 
   function enterPhase(index) {
     phaseIndex = index;
     elapsed = 0;
-    if (phaseIndex >= phases.length) {
-      finish();
-      return;
-    }
-    const phase = phases[phaseIndex];
-    phaseStart = snapshot(cards);
-    phaseTargets = targetsFor(phase);
+    if (phaseIndex >= PHASES.length) return finish();
+    const phase = PHASES[phaseIndex];
+    if (phase === 'collapse') collapseStarts = snapshot(cards);
     state = { ...state, phase, active: true, ready: false, progress: 0 };
   }
 
-  function applyPhase(progress) {
+  function applyGather(progress) {
+    const orbitAngle = progress * Math.PI * (reducedMotion ? 0.45 : 3.4);
+    state = { ...state, progress, orbitAngle };
+    cards.forEach((card, index) => {
+      const delay = (index / Math.max(1, cards.length - 1)) * 0.58;
+      const arrival = smoothstep(clamp01((progress - delay) / 0.42));
+      const target = rotatedSphereTarget(sphereTargets[index], orbitAngle, index);
+      interpolate(card.position, outsideTargets[index].position, target.position, arrival);
+      interpolate(card.rotation, outsideTargets[index].rotation, target.rotation, arrival);
+      interpolate(card.scale, outsideTargets[index].scale, target.scale, arrival);
+    });
+  }
+
+  function applyCollapse(progress) {
     const eased = smoothstep(progress);
-    if (state.phase === 'orbit') {
-      const angle = 4 * Math.PI * eased;
-      state = { ...state, orbitAngle: angle, progress };
-      cards.forEach((card, index) => {
-        const base = sphereTargets[index];
-        const cos = Math.cos(angle);
-        const sin = Math.sin(angle);
-        write(card.position, point(
-          base.position.x * cos - base.position.z * sin,
-          base.position.y + Math.sin(angle * 0.5 + index * 0.17) * 0.12,
-          base.position.x * sin + base.position.z * cos,
-        ));
-        write(card.rotation, point(base.rotation.x + Math.sin(angle + index) * 0.12, base.rotation.y + angle, base.rotation.z));
-        write(card.scale, base.scale);
-      });
-      return;
-    }
     state = { ...state, progress };
     cards.forEach((card, index) => {
-      interpolate(card.position, phaseStart[index].position, phaseTargets[index].position, eased);
-      interpolate(card.rotation, phaseStart[index].rotation, phaseTargets[index].rotation, eased);
-      interpolate(card.scale, phaseStart[index].scale, phaseTargets[index].scale, eased);
+      const target = deckTarget(index, deckY);
+      interpolate(card.position, collapseStarts[index].position, target.position, eased);
+      interpolate(card.rotation, collapseStarts[index].rotation, target.rotation, eased);
+      interpolate(card.scale, collapseStarts[index].scale, target.scale, eased);
     });
   }
 
@@ -137,7 +121,13 @@ export function createShuffleSequence({ reducedMotion = false, radius = 3.4, dec
     start(nextCards) {
       if (!Array.isArray(nextCards) || nextCards.length === 0) throw new Error('Shuffle requires at least one card');
       cards = nextCards;
-      sphereTargets = cards.map((_, index) => sphereTarget(index, cards.length, radius));
+      sphereTargets = cards.map((_, index) => spherePoint(index, cards.length, radius));
+      outsideTargets = cards.map((_, index) => outsidePoint(index, cards.length, radius));
+      cards.forEach((card, index) => {
+        write(card.position, outsideTargets[index].position);
+        write(card.rotation, outsideTargets[index].rotation);
+        write(card.scale, outsideTargets[index].scale);
+      });
       completed = false;
       state = { phase: 'idle', active: false, ready: false, progress: 0, orbitAngle: 0 };
       enterPhase(0);
@@ -148,12 +138,12 @@ export function createShuffleSequence({ reducedMotion = false, radius = 3.4, dec
       let remaining = deltaSeconds;
       while (remaining > 0 && state.active) {
         const duration = durations[state.phase];
-        const available = duration - elapsed;
-        const consumed = Math.min(remaining, available);
+        const consumed = Math.min(remaining, duration - elapsed);
         elapsed += consumed;
         remaining -= consumed;
         const progress = Math.min(1, elapsed / duration);
-        applyPhase(progress);
+        if (state.phase === 'gather') applyGather(progress);
+        else applyCollapse(progress);
         if (progress >= 1 - Number.EPSILON) enterPhase(phaseIndex + 1);
       }
       return this.getState();
@@ -183,4 +173,3 @@ export function createShuffleSequence({ reducedMotion = false, radius = 3.4, dec
     },
   };
 }
-

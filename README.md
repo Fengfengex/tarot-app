@@ -35,9 +35,21 @@ $env:DEEPSEEK_API_KEY='你的新 DeepSeek API Key'
 npm start
 ```
 
-然后访问 [http://localhost:8090](http://localhost:8090)。默认模型为 `deepseek-v4-pro`，启用思考模式和 `high` 推理强度；可用 `$env:DEEPSEEK_MODEL` 覆盖，用 `$env:PORT` 修改端口。运行测试使用 `npm test`。
+然后访问 [http://localhost:8090](http://localhost:8090)。默认模型为 `deepseek-v4-pro`，使用非思考模式并将输出限制为 `max_tokens: 500`；可用 `$env:DEEPSEEK_MODEL` 覆盖，用 `$env:PORT` 修改端口。运行测试使用 `npm test`。
 
 不要把真实密钥写入仓库或前端代码。`.env.example` 仅列出变量名；服务直接读取进程环境变量。未配置密钥或上游不可用时，抽牌和固定牌义仍然可用。
+
+### EdgeOne Makers
+
+项目在 `cloud-functions/api/reading.js` 提供 Makers Cloud Function。部署前请在 Makers 项目环境变量中配置 `DEEPSEEK_API_KEY`，可选配置 `DEEPSEEK_MODEL`；不要提交真实密钥。
+
+使用 Makers CLI 本地运行：
+
+```bash
+PAGES_SOURCE=skills edgeone makers dev --name tarot-app --skip-env-sync
+```
+
+然后通过 [http://127.0.0.1:8088/](http://127.0.0.1:8088/) 访问。请勿使用 `file://` 打开页面，否则 Cloud Function 路由不可用。线上环境的 `DEEPSEEK_API_KEY` 和 `DEEPSEEK_MODEL` 应配置在 Makers 项目环境变量中，不要提交真实 `.env`。
 
 <p align="center">
   一款通过手势操控的沉浸式浏览器塔罗体验。<br>

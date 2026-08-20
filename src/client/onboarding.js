@@ -1,5 +1,5 @@
 const MODES = new Set(['gesture', 'mouse']);
-const TOPICS = new Set(['general', 'love', 'career', 'wealth', 'growth']);
+const TOPICS = new Set(['general', 'love', 'career', 'mood', 'spiritual']);
 const PATHS = Object.freeze({
   gesture: ['shuffle', 'locate-input', 'target-deck', 'grab', 'reveal', 'result-explainer'],
   mouse: ['shuffle', 'target-deck', 'grab', 'reveal', 'result-explainer'],

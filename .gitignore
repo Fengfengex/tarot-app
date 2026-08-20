@@ -1,4 +1,5 @@
 .worktrees/
+.edgeone/
 node_modules/
 dist/
 .superpowers/
@@ -6,3 +7,4 @@ public/mediapipe/wasm/
 .env
 .superpowers
 .github
+.edgeone/

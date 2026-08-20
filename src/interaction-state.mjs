@@ -17,6 +17,22 @@ export function isPointInsideDeckTarget(point, bounds) {
   );
 }
 
+export function findNearestAvailableSlot(point, slots, snapRadius) {
+  if (!Number.isFinite(snapRadius) || snapRadius <= 0) return -1;
+
+  let nearestIndex = -1;
+  let nearestDistance = snapRadius;
+  slots.forEach((slot, index) => {
+    if (slot.occupied) return;
+    const distance = Math.hypot(point.x - slot.x, point.y - slot.y);
+    if (distance <= nearestDistance) {
+      nearestDistance = distance;
+      nearestIndex = index;
+    }
+  });
+  return nearestIndex;
+}
+
 export function createInputEdgeState() {
   return {
     pointerOverDeck: false,

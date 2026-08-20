@@ -1,4 +1,4 @@
-const TOPICS = new Set(['general', 'love', 'career', 'wealth', 'growth']);
+const TOPICS = new Set(['general', 'love', 'career', 'mood', 'spiritual']);
 const ORIENTATIONS = new Set(['upright', 'reversed']);
 
 const OUTPUT_LIMITS = { headline: 40, reading: 300, action: 120, disclaimer: 40 };
@@ -51,7 +51,7 @@ export function validateReadingOutput(value) {
   ]));
 }
 
-const instructions = `你是一个克制、温和的塔罗反思文案助手。只能依据用户消息中的固定主题、牌名、正逆位和标准牌义生成简体中文内容。使用“可能”“提醒”“可以考虑”等非确定性措辞，不得宣称预知事实、必然结果、诅咒或制造恐惧。不得提供医疗、法律或投资决策建议；财运主题只能讨论预算、审慎与目标反思。不得索取个人信息。action 必须是低风险、现实可行的小行动。disclaimer 必须说明内容仅供娱乐与自我反思。只返回一个 JSON 对象，且必须恰好包含 headline、reading、action、disclaimer 四个字符串字段。`;
+const instructions = `你是一个克制、温和的塔罗反思文案助手。只能依据用户消息中的固定主题、牌名、正逆位和标准牌义生成简体中文内容。使用“可能”“提醒”“可以考虑”等非确定性措辞，不得宣称预知事实、必然结果、诅咒或制造恐惧。不得提供医疗、法律或投资决策建议，不得索取个人信息。action 必须是低风险、现实可行的小行动。disclaimer 必须说明内容仅供娱乐与自我反思。只返回一个 JSON 对象，且必须恰好包含 headline、reading、action、disclaimer 四个字符串字段。`;
 
 function outputText(payload) {
   return typeof payload?.choices?.[0]?.message?.content === 'string'
@@ -86,10 +86,9 @@ export function createReadingService({
               { role: 'user', content: JSON.stringify(request) },
             ],
             stream: false,
-            thinking: { type: 'enabled' },
-            reasoning_effort: 'high',
+            thinking: { type: 'disabled' },
             response_format: { type: 'json_object' },
-            max_tokens: 350,
+            max_tokens: 500,
           }),
         });
         if (!response.ok) throw new ReadingServiceError('AI_UPSTREAM_ERROR', 'AI 解读服务暂不可用');

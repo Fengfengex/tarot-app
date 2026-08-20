@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="ritual-booting">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,8 +8,13 @@
         :root { --ink:#070705; --paper:#f2eee4; --muted:#9d978c; --violet:#b99b58; --mint:#d8b96f; --rose:#d48772; --line:rgba(216,185,111,.24); }
         * { box-sizing:border-box; }
         [hidden] { display:none!important; }
-        body { margin:0; overflow:hidden; background:radial-gradient(circle at 50% 44%,#17140d 0,#080806 48%,#030303 100%); font-family:Inter,ui-sans-serif,system-ui,sans-serif; color:var(--paper); }
+        body { margin:0; overflow:hidden; background:radial-gradient(circle at 50% 44%,#17140d 0,#080806 48%,#030303 100%); font-family:Inter,ui-sans-serif,system-ui,sans-serif; color:var(--paper); -webkit-user-select:none; user-select:none; }
+        body,body * { cursor:none!important; }
+        #custom-cursor { position:fixed; z-index:100; left:0; top:0; width:18px; height:18px; margin:-9px 0 0 -9px; pointer-events:none; border:2px solid #d8b96f; border-radius:50%; box-shadow:0 0 12px rgba(216,185,111,.5); opacity:0; transition:opacity .12s ease,border-color .12s ease,background .12s ease; will-change:transform; }
+        #custom-cursor.is-visible { opacity:1; }
+        #custom-cursor.is-pressed { border-color:#f2eee4; background:rgba(242,238,228,.16); }
         body::before { content:""; position:fixed; inset:0; pointer-events:none; background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px); background-size:40px 40px; mask-image:linear-gradient(to bottom,black,transparent 85%); }
+        html.ritual-booting body::after { content:""; position:fixed; z-index:29; inset:0; pointer-events:none; background:#030303; }
         #canvas-container { position:absolute; inset:0; z-index:1; background:#030303; }
         #canvas-container::after { content:""; position:absolute; inset:0; pointer-events:none; opacity:.52; background-image:radial-gradient(circle at 18% 21%,rgba(242,238,228,.7) 0 1px,transparent 1.6px),radial-gradient(circle at 72% 34%,rgba(216,185,111,.52) 0 1px,transparent 1.7px),radial-gradient(circle at 44% 77%,rgba(242,238,228,.48) 0 1.2px,transparent 1.8px),radial-gradient(circle at 50% 45%,transparent 0,rgba(3,3,3,.55) 72%); background-size:137px 137px,193px 193px,239px 239px,100% 100%; }
         #ui-layer { --ui-focus:1; position:absolute; inset:0; z-index:2; pointer-events:none; padding:clamp(18px,3vw,42px); display:grid; grid-template-columns:minmax(250px,330px) 1fr minmax(220px,290px); grid-template-rows:auto 1fr auto; gap:22px; }
@@ -17,21 +22,48 @@
         .eyebrow { color:var(--mint); font-size:10px; letter-spacing:.34em; text-transform:uppercase; }
         .oracle-header h1 { font-family:Georgia,'Times New Roman',serif; font-weight:400; font-size:clamp(32px,4vw,58px); line-height:.92; letter-spacing:-.05em; margin:14px 0 12px; white-space:nowrap; }
         .oracle-header p { color:var(--muted); font-size:12px; line-height:1.6; max-width:260px; margin:0; }
-        .oracle-console,.status-panel,#history-panel { pointer-events:auto; background:linear-gradient(145deg,rgba(16,13,29,.86),rgba(7,7,15,.62)); border:1px solid var(--line); backdrop-filter:blur(16px); box-shadow:0 18px 60px rgba(0,0,0,.28); }
-        .oracle-console { position:fixed; right:clamp(18px,3vw,42px); bottom:clamp(18px,3vw,42px); width:min(290px,calc(100vw - 36px)); padding:16px; opacity:var(--ui-focus); }
+        .oracle-console { pointer-events:auto; background:linear-gradient(145deg,rgba(16,13,29,.86),rgba(7,7,15,.62)); border:1px solid var(--line); backdrop-filter:blur(16px); box-shadow:0 18px 60px rgba(0,0,0,.28); }
+        .oracle-console { position:fixed; right:clamp(18px,3vw,42px); bottom:clamp(18px,3vw,42px); width:min(190px,calc(100vw - 36px)); padding:14px; opacity:var(--ui-focus); }
         .console-label { color:var(--muted); font-size:9px; letter-spacing:.24em; margin-bottom:10px; text-transform:uppercase; }
         button { position:relative; overflow:hidden; background:rgba(255,255,255,.035); color:var(--paper); border:1px solid var(--line); padding:9px 11px; cursor:pointer; transition:transform .18s ease,border-color .18s,color .18s,background .18s; width:100%; font:600 10px/1.2 inherit; letter-spacing:.08em; text-transform:uppercase; }
         button:hover { transform:translateY(-2px); border-color:var(--mint); color:var(--mint); background:rgba(84,232,196,.08); }
-        #topic-picker { margin-top:8px; display:grid; grid-template-columns:repeat(5,1fr); gap:4px; }
-        #topic-picker button { padding:7px 2px; font-size:9px; }
-        #topic-picker button[aria-pressed="true"] { color:#080711; border-color:var(--mint); background:var(--mint); }
-        .gesture-guide { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:14px; color:var(--muted); font-size:9px; line-height:1.35; }
-        .gesture-guide span { border-top:1px solid var(--line); padding-top:7px; }
-        .status-panel { position:fixed; right:clamp(18px,3vw,42px); top:clamp(190px,25vh,240px); width:min(290px,calc(100vw - 36px)); padding:14px 16px; opacity:var(--ui-focus); }
-        .status-row { display:flex; justify-content:space-between; align-items:center; gap:12px; color:var(--muted); font-size:9px; letter-spacing:.18em; text-transform:uppercase; }
-        .status-row + .status-row { border-top:1px solid var(--line); margin-top:10px; padding-top:10px; }
-        #status-text,#deck-count { color:var(--paper); font-size:12px; letter-spacing:.04em; text-transform:none; }
-        #gesture-icon { color:var(--mint); font-size:18px; min-width:24px; text-align:center; }
+        .oracle-header,.oracle-console { transition:opacity .75s ease,transform .75s cubic-bezier(.22,.8,.3,1),filter .75s ease; }
+        body.prophecy-active .oracle-header,body.prophecy-active .oracle-console { opacity:0!important; filter:blur(5px); pointer-events:none; }
+        body.prophecy-active .oracle-header { transform:translateY(-18px); }
+        body.prophecy-active .oracle-console { transform:translateY(18px); }
+        #prophecy-flow { position:fixed; z-index:3; inset:0; width:100%; height:100%; pointer-events:none; opacity:0; transition:opacity .2s ease; }
+        #prophecy-flow.is-flowing { opacity:1; }
+        .prophecy-stream { fill:none; stroke:#ffdf82; stroke-width:1.8; stroke-linecap:round; filter:url(#prophecy-glow); opacity:0; }
+        .prophecy-stream.stream-two { stroke:#fff0b8; stroke-width:2.4; }
+        .prophecy-stem { fill:none; stroke:#f2eee4; stroke-width:1.5; stroke-dasharray:70; stroke-dashoffset:70; filter:url(#prophecy-glow); }
+        #prophecy-flow.is-flowing .prophecy-stem { animation:prophecy-stem .55s .78s ease-out forwards; }
+        #prophecy-panel { position:fixed; z-index:3; left:50%; top:48%; width:min(780px,calc(100vw - 48px)); max-height:49vh; overflow:auto; transform:translateX(-50%) scaleY(.02); transform-origin:50% 0; opacity:0; pointer-events:none; border:1px solid transparent; background:linear-gradient(180deg,rgba(22,18,10,.96),rgba(7,7,6,.97)); box-shadow:0 28px 90px rgba(0,0,0,.58),inset 0 1px rgba(255,239,190,.08); clip-path:inset(0 0 100% 0); transition:transform .9s cubic-bezier(.16,1,.3,1),clip-path .9s cubic-bezier(.16,1,.3,1),opacity .18s ease,border-color .45s ease; scrollbar-width:thin; scrollbar-color:var(--violet) transparent; }
+        #prophecy-panel::before { content:""; position:absolute; left:50%; top:-1px; width:0; height:1px; transform:translateX(-50%); background:linear-gradient(90deg,transparent,#ffdf82 18%,#f2eee4 50%,#ffdf82 82%,transparent); box-shadow:0 0 20px rgba(255,223,130,.75); transition:width .55s ease; }
+        #prophecy-panel.is-tracing { opacity:1; border-top-color:rgba(255,223,130,.82); }
+        #prophecy-panel.is-tracing::before { width:92%; }
+        #prophecy-panel.is-growing { transform:translateX(-50%) scaleY(1); clip-path:inset(0); opacity:1; pointer-events:auto; border-color:rgba(216,185,111,.36); border-top-color:rgba(255,223,130,.82); }
+        .prophecy-inner { padding:26px 30px 24px; }
+        .prophecy-kicker { margin:0 0 9px; color:var(--mint); font-size:9px; letter-spacing:.28em; text-transform:uppercase; }
+        #prophecy-question { margin:0; color:var(--paper); font:400 clamp(20px,2.5vw,30px)/1.35 Georgia,'Times New Roman',serif; }
+        .prophecy-divider { height:1px; margin:20px 0; background:linear-gradient(90deg,rgba(216,185,111,.46),transparent); }
+        .prophecy-loading { display:flex; align-items:center; gap:12px; color:#c8c0b2; font-size:12px; letter-spacing:.08em; }
+        .prophecy-loading::before { content:""; width:16px; height:16px; flex:0 0 auto; border:1px solid rgba(216,185,111,.3); border-top-color:#ffdf82; border-radius:50%; animation:prophecy-spin .9s linear infinite; }
+        .prophecy-result { animation:prophecy-result-in .7s ease both; }
+        .prophecy-result h3 { margin:0 0 10px; color:#ffdf82; font:400 clamp(22px,2.7vw,32px)/1.2 Georgia,serif; }
+        .prophecy-overview,.prophecy-synthesis { margin:0; color:#ddd5c6; font:13px/1.8 Georgia,serif; }
+        .prophecy-cards { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:18px 0; }
+        .prophecy-card-reading { padding:13px; border:1px solid rgba(216,185,111,.2); background:linear-gradient(145deg,rgba(255,223,130,.055),rgba(0,0,0,.12)); }
+        .prophecy-card-reading small { color:#a99f8d; font-size:9px; letter-spacing:.18em; text-transform:uppercase; }
+        .prophecy-card-reading strong { display:block; margin:6px 0 8px; color:#f2eee4; font:500 14px/1.3 Georgia,serif; }
+        .prophecy-card-reading p { margin:0; color:#bfb6a6; font-size:11px; line-height:1.65; }
+        .prophecy-action { margin:16px 0 8px; padding:12px 14px; color:#f2eee4; border-left:2px solid #ffdf82; background:rgba(216,185,111,.07); font-size:12px; line-height:1.65; }
+        .prophecy-disclaimer { color:#81796d; font-size:9px; }
+        .prophecy-error { color:#d7aa98; font-size:12px; line-height:1.7; }
+        #prophecy-restart { width:auto; margin-top:22px; padding:10px 18px; }
+        @keyframes prophecy-stem { from{stroke-dashoffset:70;opacity:0} to{stroke-dashoffset:0;opacity:1} }
+        @keyframes prophecy-spin { to{transform:rotate(360deg)} }
+        @keyframes prophecy-result-in { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+        @media (max-width:650px) { .prophecy-cards{grid-template-columns:1fr}.prophecy-inner{padding:20px}#prophecy-panel{top:46%;max-height:52vh} }
         #result-display { position:absolute; top:50%; left:50%; width:min(680px,calc(100vw - 40px)); transform:translate(-50%,-50%); text-align:center; opacity:0; pointer-events:none; padding:30px; background:radial-gradient(ellipse,rgba(12,8,23,.94),rgba(8,6,16,.74) 58%,transparent 75%); }
         #result-title { font-family:'Courier New',Courier,monospace; font-size:clamp(42px,6vw,78px); font-weight:bold; line-height:.95; margin:0; text-shadow:0 0 35px rgba(155,124,255,.35); }
         #orientation-marker { margin:10px auto 0; color:var(--rose); font-family:Inter,ui-sans-serif,system-ui,sans-serif; font-size:10px; font-weight:600; line-height:1.2; letter-spacing:.18em; text-shadow:0 0 12px rgba(255,94,188,.35); animation:orientation-reveal 220ms ease-out both; }
@@ -41,32 +73,23 @@
         #ai-headline { margin:0 0 7px; color:var(--mint); font:600 10px/1.2 inherit; letter-spacing:.18em; text-transform:uppercase; }
         #ai-text,#ai-action { margin:6px 0; font-size:12px; line-height:1.6; }
         #ai-action { color:#bdebdc; } #ai-disclaimer { color:#777083; font-size:9px; }
-        #history-panel { position:fixed; left:clamp(18px,3vw,42px); bottom:clamp(18px,3vw,42px); width:min(290px,calc(100vw - 36px)); max-height:210px; overflow-y:auto; padding:14px 16px; opacity:var(--ui-focus); scrollbar-width:thin; scrollbar-color:var(--violet) transparent; }
-        .history-kicker { color:var(--violet); font-size:9px; letter-spacing:.2em; padding-bottom:10px; border-bottom:1px solid var(--line); }
-        .history-item { border-bottom:1px solid var(--line); padding:10px 0; display:flex; justify-content:space-between; font-size:11px; }
-        .history-name { color:#d9d1e7; }
         .stage-orbit { position:absolute; z-index:1; left:50%; top:50%; width:min(48vw,620px); aspect-ratio:1; transform:translate(-50%,-50%); border:1px solid rgba(155,124,255,.14); border-radius:50%; pointer-events:none; }
         .stage-orbit::before { content:""; position:absolute; inset:14%; border:1px dashed rgba(84,232,196,.12); border-radius:50%; }
-        #shuffle-stage { position:absolute; z-index:4; left:50%; top:50%; width:min(440px,calc(100vw - 40px)); transform:translate(-50%,-50%); pointer-events:none; text-align:center; }
-        #shuffle-status { position:absolute; left:50%; bottom:clamp(150px,20vh,210px); width:100%; transform:translateX(-50%); color:var(--mint); font-size:9px; letter-spacing:.3em; line-height:1.7; text-transform:uppercase; text-shadow:0 0 22px rgba(216,185,111,.36); }
-        .shuffle-actions { position:absolute; left:50%; top:clamp(145px,19vh,205px); width:min(230px,70vw); transform:translateX(-50%); display:grid; gap:7px; pointer-events:auto; }
-        #shuffle-action { color:#17130b; border-color:#eee7d7; background:#eee7d7; padding:12px 16px; }
-        #shuffle-action:hover { color:#090806; border-color:var(--mint); background:var(--mint); }
-        #shuffle-action:disabled { cursor:not-allowed; opacity:.38; transform:none; }
-        #shuffle-skip { color:var(--muted); border-color:transparent; background:transparent; }
         #input_video { position:absolute; width:1px; height:1px; opacity:0; }
         #loading { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:10; color:var(--mint); background:rgba(5,5,12,.92); border:1px solid var(--line); padding:18px 24px; font-size:11px; letter-spacing:.16em; text-transform:uppercase; }
         .onboarding-backdrop { position:fixed; inset:0; z-index:30; display:grid; place-items:center; padding:20px; background:rgba(3,3,9,.82); backdrop-filter:blur(12px); }
-        .onboarding-card { width:min(560px,calc(100vw - 40px)); padding:clamp(24px,5vw,42px); border:1px solid var(--line); background:linear-gradient(145deg,rgba(22,17,39,.98),rgba(7,7,15,.98)); box-shadow:0 28px 100px rgba(0,0,0,.55); }
+        .onboarding-card { width:min(680px,calc(100vw - 40px)); padding:clamp(24px,5vw,42px); border:1px solid var(--line); background:linear-gradient(145deg,rgba(22,17,39,.98),rgba(7,7,15,.98)); box-shadow:0 28px 100px rgba(0,0,0,.55); }
         .onboarding-kicker { margin:0 0 12px; color:var(--mint); font-size:9px; letter-spacing:.3em; text-transform:uppercase; }
         .onboarding-card h2 { margin:0; font:400 clamp(30px,5vw,48px)/1 Georgia,serif; }
         .onboarding-copy { margin:14px 0 22px; color:#b7afc5; font-size:13px; line-height:1.7; }
         .onboarding-options { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-        .onboarding-option { min-height:82px; text-align:left; padding:14px; }
+        .onboarding-option { min-height:104px; text-align:left; padding:16px; display:grid; grid-template-columns:auto 1fr; grid-template-rows:auto 1fr; column-gap:12px; align-items:start; }
+        .onboarding-option-icon { grid-row:1 / span 2; display:grid; place-items:center; width:40px; height:40px; color:var(--mint); border:1px solid rgba(216,185,111,.35); border-radius:50%; font:400 18px/1 Georgia,serif; }
+        .onboarding-option-icon svg { width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
         .onboarding-option strong,.onboarding-option small { display:block; }
         .onboarding-option small { margin-top:7px; color:var(--muted); font-weight:400; line-height:1.5; letter-spacing:0; text-transform:none; }
-        .onboarding-topics { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin-bottom:16px; }
-        .onboarding-topics button[aria-pressed="true"] { color:var(--ink); border-color:var(--mint); background:var(--mint); }
+        .onboarding-topics { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:22px; }
+        .onboarding-topics .onboarding-option:hover .onboarding-option-icon { border-color:var(--mint); background:rgba(216,185,111,.1); }
         .onboarding-actions { display:flex; gap:8px; margin-top:16px; }
         .onboarding-actions .secondary { color:var(--muted); }
         #onboarding-guide { position:fixed; z-index:24; right:clamp(18px,3vw,42px); top:clamp(18px,3vw,42px); width:min(350px,calc(100vw - 36px)); pointer-events:auto; padding:14px 16px; border:1px solid rgba(84,232,196,.36); background:rgba(8,7,17,.94); box-shadow:0 20px 70px rgba(0,0,0,.45); text-align:left; }
@@ -76,12 +99,11 @@
         #onboarding-camera-error { margin:10px 0 0; padding:10px; color:#ffdca8; border-left:2px solid #ffb35c; background:rgba(255,179,92,.08); font-size:11px; line-height:1.5; }
         #onboarding-guide .onboarding-actions { margin-top:10px; }
         #onboarding-guide button { width:auto; }
-        #onboarding-help { margin-top:8px; }
         button:focus-visible { outline:2px solid var(--mint); outline-offset:3px; }
         @keyframes oracle-scan { 0%,100%{transform:scaleX(.2);opacity:.35} 50%{transform:scaleX(1);opacity:1} }
         @keyframes orientation-reveal { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
-        @media (max-width: 800px) { body{overflow:hidden} #ui-layer{padding:16px;display:block}.oracle-header h1{font-size:34px}.oracle-header p{display:none}.status-panel{right:16px;top:150px;width:min(250px,46vw)}.oracle-console{right:16px;bottom:16px;width:min(300px,52vw)}.gesture-guide{display:none}#history-panel{left:16px;bottom:16px;width:min(250px,40vw);max-height:120px}.stage-orbit{width:78vw}#result-display{top:44%;padding:20px}#onboarding-guide{right:16px;top:16px;width:min(330px,calc(100vw - 32px))} }
-        @media (max-width: 520px) { .oracle-header h1{font-size:27px}.status-panel{top:82px;right:12px;width:46%;padding:9px}.oracle-console{right:12px;bottom:12px;width:54%;padding:10px}#topic-picker{grid-template-columns:repeat(5,1fr)}#history-panel{left:12px;bottom:12px;width:38%;max-height:96px;padding:10px}#result-title{font-size:38px}#ai-reading{padding:12px}.onboarding-options{grid-template-columns:1fr}.onboarding-topics{grid-template-columns:repeat(3,1fr)}#onboarding-guide{right:12px;top:12px;width:calc(100vw - 24px)}.onboarding-card{padding:22px}.onboarding-actions{flex-wrap:wrap}#shuffle-status{bottom:130px}.shuffle-actions{top:130px} }
+        @media (max-width: 800px) { body{overflow:hidden} #ui-layer{padding:16px;display:block}.oracle-header h1{font-size:34px}.oracle-header p{display:none}.oracle-console{right:16px;bottom:16px;width:min(240px,52vw)}.stage-orbit{width:78vw}#result-display{top:44%;padding:20px}#onboarding-guide{right:16px;top:16px;width:min(330px,calc(100vw - 32px))} }
+        @media (max-width: 520px) { .oracle-header h1{font-size:27px}.oracle-console{right:12px;bottom:12px;width:48%;padding:10px}#result-title{font-size:38px}#ai-reading{padding:12px}.onboarding-options,.onboarding-topics{grid-template-columns:1fr}#onboarding-guide{right:12px;top:12px;width:calc(100vw - 24px)}.onboarding-card{padding:22px}.onboarding-actions{flex-wrap:wrap} }
         @media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation-duration:.01ms!important; animation-iteration-count:1!important; scroll-behavior:auto!important; transition-duration:.01ms!important; } }
     </style>
     <style id="legacy-styles" media="not all">
@@ -97,8 +119,6 @@
         button:hover { background: #444; border-color: #aaa; }
         button.active { background: #004400; border-color: #0f0; }
 
-        .status-panel { text-align: right; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 8px; }
-        #gesture-icon { font-size: 24px; display: inline-block; width: 30px; text-align: center; }
         
         /* Center Result Display */
         #result-display { 
@@ -109,9 +129,6 @@
         }
         #result-title { font-size: 3em; font-weight: bold; text-shadow: 0 0 10px #f0f; margin: 0; }
         #result-meaning { font-size: 1.2em; color: #aaa; margin-top: 10px; max-width: 600px; margin-left: auto; margin-right: auto; }
-        #topic-picker { pointer-events: auto; margin-top: 10px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
-        #topic-picker button { font-size: 0.78em; padding: 6px 4px; margin: 0; }
-        #topic-picker button[aria-pressed="true"] { color: #ffe8a3; border-color: #d6a84b; background: #3a2910; }
         #ai-reading { max-width: 620px; margin: 14px auto 0; padding: 14px; border: 1px solid rgba(214,168,75,.55); background: rgba(8,5,18,.88); border-radius: 10px; pointer-events: auto; }
         #ai-headline { margin: 0 0 8px; color: #ffe8a3; font-size: 1.15em; }
         #ai-text, #ai-action { margin: 6px 0; line-height: 1.55; }
@@ -119,15 +136,6 @@
         #ai-disclaimer { color: #888; font-size: .72em; }
         .reversed-tag { color: #ff4444; font-size: 0.6em; border: 1px solid #ff4444; padding: 2px 6px; border-radius: 4px; vertical-align: middle; margin-left: 10px; }
 
-        /* History Panel */
-        #history-panel { 
-            pointer-events: auto; background: rgba(10,10,15,0.8); border-top: 2px solid #333; 
-            height: 150px; overflow-y: auto; padding: 10px; margin-bottom: 0; font-size: 0.9em;
-            scrollbar-width: thin; scrollbar-color: #444 #111;
-        }
-        .history-item { border-bottom: 1px solid #333; padding: 5px 0; display: flex; justify-content: space-between; }
-        .history-name { color: #dcb; }
-        
         /* Video hidden but needed for MediaPipe */
         #input_video { position: absolute; top: 0; left: 0; width: 1px; height: 1px; opacity: 0; }
         
@@ -149,19 +157,29 @@
 </head>
 <body>
 
+    <div id="custom-cursor" aria-hidden="true"></div>
     <video id="input_video"></video>
     <div id="loading" hidden>初始化神谕系统 (加载模型中)...</div>
 
     <div id="canvas-container"></div>
     <div class="stage-orbit" aria-hidden="true"></div>
-    <section id="shuffle-stage" aria-label="洗牌控制">
-        <div id="shuffle-status" role="status" aria-live="polite">DECK DORMANT · 等待洗牌</div>
-        <div class="shuffle-actions">
-            <button id="shuffle-action" type="button">开始洗牌</button>
-            <button id="shuffle-skip" type="button" hidden>跳过动画</button>
+    <svg id="prophecy-flow" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true">
+        <defs><filter id="prophecy-glow"><feGaussianBlur stdDeviation="4" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+        <path class="prophecy-stream stream-one" pathLength="100" d="M315 365 C315 410 350 450 390 480"/>
+        <path class="prophecy-stream stream-two" pathLength="100" d="M500 365 C575 390 570 450 500 480"/>
+        <path class="prophecy-stream stream-three" pathLength="100" d="M685 365 C685 410 650 450 610 480"/>
+    </svg>
+    <section id="prophecy-panel" aria-labelledby="prophecy-question" aria-hidden="true">
+        <div class="prophecy-inner">
+            <p class="prophecy-kicker">My question · 我的询问</p>
+            <h2 id="prophecy-question"></h2>
+            <div class="prophecy-divider"></div>
+            <div id="prophecy-loading" class="prophecy-loading">正在汇聚三张牌的讯息并生成预言…</div>
+            <div id="prophecy-result" class="prophecy-result" hidden></div>
+            <div id="prophecy-error" class="prophecy-error" hidden></div>
+            <button id="prophecy-restart" type="button">重新开始</button>
         </div>
     </section>
-
     <div id="ui-layer">
         <header class="oracle-header editorial-intro">
             <div class="eyebrow">ARCANA / SESSION 01</div>
@@ -170,19 +188,8 @@
         </header>
             <section class="oracle-console editorial-intro" aria-label="神谕控制台">
                 <div class="console-label">Oracle console · 神谕控制台</div>
-                <button id="btn-mode">切换模式: ✋ 手势</button>
-                <div id="topic-picker" aria-label="选择 AI 解读主题">
-                    <button type="button" data-topic="general" aria-pressed="true">综合</button><button type="button" data-topic="love" aria-pressed="false">感情</button><button type="button" data-topic="career" aria-pressed="false">事业</button><button type="button" data-topic="wealth" aria-pressed="false">财运</button><button type="button" data-topic="growth" aria-pressed="false">成长</button>
-                </div>
-                <div class="gesture-guide">
-                    <span>01 张开<br>悬停</span><span>02 捏合<br>抓牌</span><span>03 握拳<br>揭示</span>
-                </div>
-                <button id="onboarding-help" type="button">？ 操作帮助</button>
+                <button id="btn-mode" type="button">切换模式: ✋ 手势</button>
             </section>
-            <aside class="status-panel editorial-intro" aria-label="当前状态">
-                <div class="status-row"><span>Connection</span><span><span id="status-text">等待连接...</span> <span id="gesture-icon">—</span></span></div>
-                <div class="status-row"><span>Remaining</span><span id="deck-count">78</span></div>
-            </aside>
 
         <div id="result-display">
             <h1 id="result-title">THE FOOL</h1>
@@ -194,34 +201,29 @@
             </section>
         </div>
 
-        <aside id="history-panel" class="editorial-intro" aria-label="抽牌记录"><div class="history-kicker">ARCHIVE · 抽牌记录</div></aside>
     </div>
 
-    <div id="onboarding-dialog" class="onboarding-backdrop" role="dialog" aria-modal="true" aria-labelledby="onboarding-title" tabindex="-1" hidden>
+    <div id="onboarding-dialog" class="onboarding-backdrop" role="dialog" aria-modal="true" aria-labelledby="onboarding-title" tabindex="-1">
         <article class="onboarding-card">
             <section id="onboarding-mode-step">
                 <p class="onboarding-kicker">First ritual · 首次引导</p>
                 <h2 id="onboarding-title">你想怎样抽牌？</h2>
-                <p class="onboarding-copy">先选择最顺手的方式。之后随时可以切换，也能重新打开操作帮助。</p>
+                <p class="onboarding-copy">先选择最顺手的方式。进入牌桌后可以随时切换手势或鼠标模式。</p>
                 <div class="onboarding-options">
-                    <button class="onboarding-option" type="button" data-onboarding-mode="gesture"><strong>✋ 手势体验</strong><small>用张开、捏合和握拳完成抽牌。摄像头画面仅在浏览器本地用于手势识别。</small></button>
-                    <button class="onboarding-option" type="button" data-onboarding-mode="mouse"><strong>🖱️ 鼠标体验</strong><small>移动到牌堆，按住抓牌，松开即可揭示。</small></button>
+                    <button class="onboarding-option" type="button" data-onboarding-mode="gesture"><span class="onboarding-option-icon" aria-hidden="true">✋</span><strong>手势体验</strong><small>用张开、捏合和握拳完成抽牌。摄像头画面仅在浏览器本地用于手势识别。</small></button>
+                    <button class="onboarding-option" type="button" data-onboarding-mode="mouse"><span class="onboarding-option-icon" aria-hidden="true">🖱</span><strong>鼠标体验</strong><small>移动到牌堆，按住抓牌，松开即可揭示。</small></button>
                 </div>
             </section>
             <section id="onboarding-topic-step" hidden>
                 <p class="onboarding-kicker">Step 02 · 解读方向</p>
                 <h2>这次想关注什么？</h2>
-                <p class="onboarding-copy">主题只影响抽牌后的星语解读，不会改变你抽到哪张牌。</p>
                 <div class="onboarding-topics" aria-label="首次引导解读主题">
-                    <button type="button" data-onboarding-topic="general" aria-pressed="true">综合</button>
-                    <button type="button" data-onboarding-topic="love" aria-pressed="false">感情</button>
-                    <button type="button" data-onboarding-topic="career" aria-pressed="false">事业</button>
-                    <button type="button" data-onboarding-topic="wealth" aria-pressed="false">财运</button>
-                    <button type="button" data-onboarding-topic="growth" aria-pressed="false">成长</button>
+                    <button class="onboarding-option" type="button" data-onboarding-topic="love" aria-pressed="false"><span class="onboarding-option-icon" aria-hidden="true"><svg class="lucide-heart-handshake" viewBox="0 0 24 24"><path d="M19.414 14.414C21 12.828 22 11.5 22 9.5a5.5 5.5 0 0 0-9.591-3.676.6.6 0 0 1-.818.001A5.5 5.5 0 0 0 2 9.5c0 2.3 1.5 4 3 5.5l5.535 5.362a2 2 0 0 0 2.879.052 2.12 2.12 0 0 0-.004-3 2.124 2.124 0 1 0 3-3 2.124 2.124 0 0 0 3.004 0 2 2 0 0 0 0-2.828l-1.881-1.882a2.41 2.41 0 0 0-3.409 0l-1.71 1.71a2 2 0 0 1-2.828 0 2 2 0 0 1 0-2.828l2.823-2.762"/></svg></span><strong>感情</strong><small>聚焦关系互动、真实心意与情感走向</small></button>
+                    <button class="onboarding-option" type="button" data-onboarding-topic="career" aria-pressed="false"><span class="onboarding-option-icon" aria-hidden="true"><svg class="lucide-briefcase-business" viewBox="0 0 24 24"><path d="M12 12h.01"/><path d="M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M22 13a18.15 18.15 0 0 1-20 0"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg></span><strong>事业</strong><small>梳理工作选择、行动机会与下一步方向</small></button>
+                    <button class="onboarding-option" type="button" data-onboarding-topic="mood" aria-pressed="false"><span class="onboarding-option-icon" aria-hidden="true"><svg class="lucide-cloud-sun" viewBox="0 0 24 24"><path d="M12 2v2"/><path d="m4.93 4.93 1.42 1.42"/><path d="M20 12h2"/><path d="m19.07 4.93-1.42 1.42"/><path d="M15.95 12.5A4 4 0 0 0 9 8.8"/><path d="M17 18H6a4 4 0 1 1 3.6-5.75A5 5 0 1 1 17 18Z"/></svg></span><strong>心境</strong><small>照见当下情绪、内在气候与真实感受</small></button>
+                    <button class="onboarding-option" type="button" data-onboarding-topic="spiritual" aria-pressed="false"><span class="onboarding-option-icon" aria-hidden="true"><svg class="lucide-sparkles" viewBox="0 0 24 24"><path d="m12 3-1.9 5.1L5 10l5.1 1.9L12 17l1.9-5.1L19 10l-5.1-1.9Z"/><path d="M5 3v4"/><path d="M3 5h4"/><path d="M19 17v4"/><path d="M17 19h4"/></svg></span><strong>灵性</strong><small>探索内在指引、象征意义与精神成长</small></button>
                 </div>
-                <button id="onboarding-start" type="button">进入牌桌</button>
             </section>
-            <div class="onboarding-actions"><button class="secondary" type="button" data-onboarding-skip>跳过引导</button></div>
         </article>
     </div>
 
@@ -232,21 +234,28 @@
         <p id="onboarding-camera-error" hidden></p>
         <div class="onboarding-actions">
             <button id="onboarding-use-mouse" type="button" hidden>改用鼠标</button>
-            <button class="secondary" type="button" data-onboarding-skip>跳过引导</button>
+            <button id="onboarding-complete" class="secondary" type="button" hidden>知道了</button>
         </div>
     </aside>
 
     <script type="module">
         import * as THREE from 'three';
         import { createReadingController } from './src/client/reading.js';
+        import { buildProphecyPrompt } from './src/client/prophecy-prompt.js';
         import { createMinorEffectController } from './src/client/effects/minor-effect-controller.js';
         import { createThreeElementRenderer } from './src/client/effects/three-element-renderer.js';
-        import { animate as animeAnimate, createTimeline, stagger } from '/vendor/anime.esm.js';
+        import { animate as animeAnimate, createTimeline, stagger, svg } from 'https://cdn.jsdelivr.net/npm/animejs@4.5.0/+esm';
         import { createUiMotion } from './src/client/ui-motion.js';
         import { updateOrientationMarker } from './src/client/orientation-marker.js';
         import { createOnboardingController } from './src/client/onboarding.js';
         import { createShuffleSequence } from './src/client/shuffle-sequence.js';
         import { depthForApparentScale } from './src/client/card-presentation.js';
+        import { findNearestAvailableSlot } from './src/interaction-state.mjs';
+
+        const tarotDatasetResponse = await fetch('./src/data/tarotoo-cards.json');
+        if (!tarotDatasetResponse.ok) throw new Error('Unable to load the tarot meanings dataset');
+        const TAROT_SOURCE = await tarotDatasetResponse.json();
+        if (!Array.isArray(TAROT_SOURCE) || TAROT_SOURCE.length !== 78) throw new Error('Tarot meanings dataset must contain 78 cards');
 
         const uiMotion = createUiMotion({ anime: { animate: animeAnimate, createTimeline, stagger } });
         uiMotion.intro();
@@ -254,21 +263,23 @@
 
         const aiElements = { headline: document.getElementById('ai-headline'), text: document.getElementById('ai-text'), action: document.getElementById('ai-action'), disclaimer: document.getElementById('ai-disclaimer') };
         let lastReadingCard = null;
+        let selectedTopic = 'love';
         const readingController = createReadingController({ view: {
             showLoading() { aiElements.headline.textContent = '星语生成中…'; aiElements.text.textContent = '正在结合牌面与所选主题生成受控解读。'; aiElements.action.hidden = true; uiMotion.setAiState('loading'); },
             showSuccess(value) { aiElements.headline.textContent = value.headline; aiElements.text.textContent = value.reading; aiElements.action.textContent = `行动提示：${value.action}`; aiElements.action.hidden = false; aiElements.disclaimer.textContent = `AI 生成 · ${value.disclaimer}`; uiMotion.setAiState('success'); },
             showError(message) { aiElements.headline.textContent = 'AI 解读暂不可用'; aiElements.text.textContent = `${message} 固定牌义仍可正常参考。`; aiElements.action.hidden = true; uiMotion.setAiState('error'); }
         }});
         function selectTopic(topic) {
+            selectedTopic = topic;
             readingController.setTopic(topic);
-            document.querySelectorAll('[data-topic], [data-onboarding-topic]').forEach(item => {
-                const value = item.dataset.topic || item.dataset.onboardingTopic;
+            document.querySelectorAll('[data-onboarding-topic]').forEach(item => {
+                const value = item.dataset.onboardingTopic;
                 item.setAttribute('aria-pressed', String(value === topic));
             });
         }
-        document.querySelectorAll('#topic-picker button').forEach(button => button.addEventListener('click', () => selectTopic(button.dataset.topic)));
 
-        const onboarding = createOnboardingController();
+        // A fresh ritual starts on every page session so input mode is always explicit.
+        const onboarding = createOnboardingController({ storage: null });
         const onboardingElements = {
             dialog: document.getElementById('onboarding-dialog'),
             modeStep: document.getElementById('onboarding-mode-step'),
@@ -279,14 +290,13 @@
             copy: document.getElementById('onboarding-guide-copy'),
             cameraError: document.getElementById('onboarding-camera-error'),
             useMouse: document.getElementById('onboarding-use-mouse'),
-            help: document.getElementById('onboarding-help'),
+            complete: document.getElementById('onboarding-complete'),
         };
-        let onboardingReturnFocus = null;
         let onboardingDialogWasOpen = false;
         let cameraNotice = '';
 
         const GUIDE_COPY = {
-            shuffle: ['先唤醒这副牌', '点击中央的“开始洗牌”，让牌组完成一次完整洗牌后再抽取。'],
+            shuffle: ['先唤醒这副牌', '牌组正在完成洗牌，结束后即可抽取。'],
             'locate-input': ['让镜头看见你的手', '将整只手放进画面，识别成功后会自动进入下一步。'],
             'target-deck': ['移向中央牌堆', '让青色光标停在牌背上，感受你想抽出的那一张。'],
             'result-explainer': ['读懂你的牌', '正位或逆位是本次牌面方向；固定牌义始终可用，星语则会结合你选择的主题生成，仅供娱乐与自我反思。'],
@@ -294,7 +304,7 @@
 
         function guideCopyFor(phase, mode) {
             if (phase === 'grab') return ['抓住一张牌', mode === 'gesture' ? '拇指与食指捏合，保持动作直到牌被拿起。' : '按住鼠标拿起一张牌。'];
-            if (phase === 'reveal') return ['揭示牌面', mode === 'gesture' ? '握拳确认这张牌。' : '松开鼠标确认这张牌。'];
+            if (phase === 'reveal') return ['完成三张牌阵', mode === 'gesture' ? '依次拖到三个槽位附近，握拳放下并翻开。' : '依次拖到三个槽位附近，松开后放下并翻开。'];
             return GUIDE_COPY[phase] || ['', ''];
         }
 
@@ -319,14 +329,13 @@
                 onboardingElements.cameraError.textContent = cameraNotice;
                 onboardingElements.cameraError.hidden = !cameraNotice;
                 onboardingElements.useMouse.hidden = state.mode !== 'gesture' || !cameraNotice;
-                const skip = onboardingElements.guide.querySelector('[data-onboarding-skip]');
-                skip.textContent = state.phase === 'result-explainer' ? '知道了' : '跳过引导';
+                onboardingElements.complete.hidden = state.phase !== 'result-explainer';
             }
 
             if (dialogOpen && (!onboardingDialogWasOpen || focus)) onboardingElements.dialog.focus();
-            if (!dialogOpen && onboardingDialogWasOpen && onboardingReturnFocus) onboardingReturnFocus.focus();
             if (guideOpen && state.phase === 'result-explainer') onboardingElements.guide.focus();
             onboardingDialogWasOpen = dialogOpen;
+            document.documentElement.classList.remove('ritual-booting');
         }
 
         function advanceOnboarding(event) {
@@ -339,47 +348,25 @@
             onboarding.selectMode(button.dataset.onboardingMode);
             renderOnboarding({ focus: true });
         }));
-        document.querySelectorAll('[data-onboarding-topic]').forEach(button => button.addEventListener('click', () => {
+        document.querySelectorAll('[data-onboarding-topic]').forEach(button => button.addEventListener('click', async () => {
             onboarding.selectTopic(button.dataset.onboardingTopic);
             selectTopic(button.dataset.onboardingTopic);
-        }));
-        document.getElementById('onboarding-start').addEventListener('click', async () => {
             const { mode } = onboarding.getState();
             applyInputMode(mode, { replayGuide: false });
             onboarding.start();
             renderOnboarding();
+            startShuffle();
             if (mode === 'gesture') await startGestureCamera();
-        });
-        function dismissOnboarding() {
-            const state = onboarding.getState();
-            if (state.phase === 'result-explainer') onboarding.complete();
-            else {
-                if (state.firstVisit && (state.phase === 'welcome' || state.phase === 'topic')) {
-                    const mode = state.mode || 'mouse';
-                    applyInputMode(mode, { replayGuide: false });
-                    if (mode === 'gesture') startGestureCamera();
-                }
-                onboarding.skip();
-            }
+        }));
+        onboardingElements.complete.addEventListener('click', () => {
+            onboarding.complete();
             renderOnboarding();
-        }
-        document.querySelectorAll('[data-onboarding-skip]').forEach(button => button.addEventListener('click', dismissOnboarding));
-        onboardingElements.help.addEventListener('click', () => {
-            onboardingReturnFocus = onboardingElements.help;
-            cameraNotice = '';
-            onboarding.replay(STATE.mode);
-            if (shuffleSequence.getState().ready) onboarding.notify('shuffle-complete');
-            renderOnboarding({ focus: true });
         });
         onboardingElements.useMouse.addEventListener('click', () => {
             cameraNotice = '';
             applyInputMode('mouse', { replayGuide: false });
             onboarding.replay('mouse');
             renderOnboarding({ focus: true });
-        });
-        window.addEventListener('keydown', (event) => {
-            if (event.key !== 'Escape' || !onboarding.getState().active) return;
-            dismissOnboarding();
         });
         renderOnboarding({ focus: true });
 
@@ -390,9 +377,247 @@
             zIndexPinch: 0.04, // Threshold for pinch
             cameraZ: 12,
             heldCardScale: 1.12,
+            deckY: -2.65,
+            deckScale: 0.84,
             dragSpeed: 0.15,
+            slotScale: 0.68,
+            slotSnapRadius: 1.75,
+            slotDetachRadius: 2.15,
+            flipDuration: 0.72,
             particleLife: 2.0 // Seconds
         };
+
+        const PROPHECY_QUESTIONS = {
+            love: '我的感情关系接下来会如何发展？',
+            career: '我的事业接下来会如何发展？',
+            mood: '我当下的内在心境正在告诉我什么？',
+            spiritual: '我当前的灵性道路需要怎样的指引？'
+        };
+        const prophecyPanel = document.getElementById('prophecy-panel');
+        const prophecyQuestion = document.getElementById('prophecy-question');
+        const prophecyFlow = document.getElementById('prophecy-flow');
+        const prophecyLoading = document.getElementById('prophecy-loading');
+        const prophecyResult = document.getElementById('prophecy-result');
+        const prophecyError = document.getElementById('prophecy-error');
+        let prophecyRequestStarted = false;
+
+        function appendProphecyText(parent, tag, className, text) {
+            const element = document.createElement(tag);
+            element.className = className;
+            element.textContent = text;
+            parent.appendChild(element);
+            return element;
+        }
+
+        function renderProphecyResult(value) {
+            prophecyResult.replaceChildren();
+            appendProphecyText(prophecyResult, 'h3', '', value.headline);
+            appendProphecyText(prophecyResult, 'p', 'prophecy-overview', value.overview);
+            const cards = document.createElement('div');
+            cards.className = 'prophecy-cards';
+            value.cards.forEach(card => {
+                const article = document.createElement('article');
+                article.className = 'prophecy-card-reading';
+                appendProphecyText(article, 'small', '', card.position);
+                appendProphecyText(article, 'strong', '', card.card);
+                appendProphecyText(article, 'p', '', card.interpretation);
+                cards.appendChild(article);
+            });
+            prophecyResult.appendChild(cards);
+            appendProphecyText(prophecyResult, 'p', 'prophecy-synthesis', value.synthesis);
+            appendProphecyText(prophecyResult, 'p', 'prophecy-action', `行动指引 · ${value.action}`);
+            appendProphecyText(prophecyResult, 'small', 'prophecy-disclaimer', value.disclaimer);
+            prophecyLoading.hidden = true;
+            prophecyError.hidden = true;
+            prophecyResult.hidden = false;
+        }
+
+        async function requestProphecy(prompt) {
+            if (prophecyRequestStarted) return;
+            prophecyRequestStarted = true;
+            try {
+                const response = await fetch('/api/prophecy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) });
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(payload?.error?.message || '预言服务暂时没有回应');
+                console.debug('[prophecy] structured response', payload);
+                renderProphecyResult(payload);
+            } catch (error) {
+                prophecyLoading.hidden = true;
+                prophecyResult.hidden = true;
+                prophecyError.textContent = `${error.message}。你可以点击“重新开始”再次进行仪式。`;
+                prophecyError.hidden = false;
+            }
+        }
+
+        function hideDeckForProphecy() {
+            shuffleCards.forEach(card => { card.visible = false; });
+            if (deckBaseShadow) deckBaseShadow.visible = false;
+            if (deckOutline) deckOutline.visible = false;
+            slotGroup.visible = false;
+        }
+
+        function moveCardsIntoProphecyLayout(onComplete) {
+            const transitions = [];
+            STATE.placedCards.forEach(({ card, slotIndex }) => {
+                const slot = cardSlots[slotIndex];
+                const label = slot.label;
+                const projectedLabel = label?.position.clone().project(camera);
+                if (projectedLabel) projectedLabel.y = 0.9;
+                const labelTarget = projectedLabel?.unproject(camera);
+                const upwardDistance = labelTarget ? labelTarget.y - label.position.y : 1.8;
+                transitions.push({
+                    card, label,
+                    cardStartY: card.position.y,
+                    cardTargetY: card.position.y + upwardDistance,
+                    cardStartZ: card.position.z,
+                    cardStartRotationZ: card.rotation.z,
+                    cardStartScale: card.scale.x,
+                    labelStartY: label?.position.y,
+                    labelTargetY: labelTarget?.y ?? null,
+                    labelStartScaleX: label?.scale.x,
+                    labelStartScaleY: label?.scale.y
+                });
+            });
+            let completedCards = 0;
+            transitions.forEach((item, index) => {
+                const motion = { progress: 0 };
+                animeAnimate(motion, {
+                    progress: 1,
+                    duration: 1240,
+                    delay: index * 95,
+                    ease: 'inOut(4)',
+                    onUpdate: () => {
+                        const progress = motion.progress;
+                        const flourish = Math.sin(progress * Math.PI);
+                        const direction = index - 1;
+                        item.card.position.y = THREE.MathUtils.lerp(item.cardStartY, item.cardTargetY, progress) + flourish * 0.2;
+                        item.card.position.z = item.cardStartZ + flourish * 0.34;
+                        item.card.rotation.z = item.cardStartRotationZ + direction * flourish * 0.055;
+                        item.card.scale.setScalar(item.cardStartScale * (1 + flourish * 0.075));
+                        if (item.label) {
+                            const follow = Math.max(0, Math.min(1, (progress - 0.07) / 0.93));
+                            const labelFlourish = Math.sin(follow * Math.PI);
+                            item.label.position.y = THREE.MathUtils.lerp(item.labelStartY, item.labelTargetY, follow) + labelFlourish * 0.12;
+                            item.label.position.z = item.card.position.z + 0.25;
+                            item.label.scale.set(item.labelStartScaleX * (1 + labelFlourish * 0.055), item.labelStartScaleY * (1 + labelFlourish * 0.055), 1);
+                            item.label.material.opacity = 0.72 + follow * 0.28;
+                        }
+                    },
+                    onComplete: () => {
+                        item.card.position.set(item.card.position.x, item.cardTargetY, item.cardStartZ);
+                        item.card.rotation.z = item.cardStartRotationZ;
+                        item.card.scale.setScalar(item.cardStartScale);
+                        if (item.label) {
+                            item.label.position.set(item.label.position.x, item.labelTargetY, item.cardStartZ + 0.25);
+                            item.label.scale.set(item.labelStartScaleX, item.labelStartScaleY, 1);
+                            item.label.material.opacity = 1;
+                        }
+                        completedCards += 1;
+                        if (completedCards === transitions.length) onComplete();
+                    }
+                });
+            });
+        }
+
+        function projectWorldToFlow(point) {
+            const projected = point.clone().project(camera);
+            return { x: (projected.x + 1) * 500, y: (1 - projected.y) * 500 };
+        }
+
+        function randomBetween(min, max) {
+            return min + Math.random() * (max - min);
+        }
+
+        function createProphecyCurve(start, panelTop, laneIndex) {
+            const laneCenters = [390, 500, 610];
+            const direction = laneIndex === 0 ? -1 : laneIndex === 2 ? 1 : (Math.random() < 0.5 ? -1 : 1);
+            const endX = laneCenters[laneIndex] + randomBetween(-18, 18);
+            const gap = Math.max(28, panelTop - start.y);
+            const firstBend = direction * randomBetween(24, 62);
+            const secondBend = -direction * randomBetween(8, 30);
+            const firstY = start.y + gap * randomBetween(0.28, 0.46);
+            const secondY = panelTop - gap * randomBetween(0.12, 0.28);
+            return {
+                d: `M${start.x.toFixed(1)} ${start.y.toFixed(1)} C${(start.x + firstBend).toFixed(1)} ${firstY.toFixed(1)} ${(endX + secondBend).toFixed(1)} ${secondY.toFixed(1)} ${endX.toFixed(1)} ${panelTop.toFixed(1)}`,
+                endX,
+                firstBend,
+                secondBend
+            };
+        }
+
+        function drawProphecyConnections(onComplete) {
+            const paths = [...prophecyFlow.querySelectorAll('.prophecy-stream')];
+            const panelTop = prophecyPanel.getBoundingClientRect().top / window.innerHeight * 1000;
+            const curves = [];
+            STATE.placedCards.forEach(({ card }, index) => {
+                const cardBottom = card.position.clone();
+                cardBottom.y -= CONFIG.cardHeight * CONFIG.slotScale * 0.5;
+                const start = projectWorldToFlow(cardBottom);
+                const curve = createProphecyCurve(start, panelTop, index);
+                curves.push(curve);
+                paths[index].setAttribute('d', curve.d);
+                paths[index].style.opacity = '1';
+            });
+            console.debug('[prophecy] generated connection curves', curves);
+            prophecyFlow.classList.add('is-flowing');
+            animeAnimate(svg.createDrawable(paths), {
+                draw: ['0 0', '0 1'],
+                duration: 900,
+                delay: stagger(randomBetween(90, 155)),
+                ease: 'inOutQuad',
+                onComplete: () => {
+                    animeAnimate(paths, { opacity: [.68, 1], duration: 1700, alternate: true, loop: true, ease: 'inOutSine' });
+                    onComplete();
+                }
+            });
+        }
+
+        function revealProphecyPanel() {
+            const reveal = { progress: 0 };
+            prophecyPanel.classList.add('is-tracing');
+            prophecyPanel.style.transition = 'none';
+            animeAnimate(reveal, {
+                progress: 1,
+                duration: 880,
+                delay: 320,
+                ease: 'out(5)',
+                onUpdate: () => {
+                    const progress = reveal.progress;
+                    prophecyPanel.style.opacity = String(progress);
+                    prophecyPanel.style.transform = `translateX(-50%) scaleY(${0.02 + progress * 0.98})`;
+                    prophecyPanel.style.clipPath = `inset(0 0 ${(1 - progress) * 100}% 0)`;
+                    prophecyPanel.style.borderColor = `rgba(216,185,111,${progress * 0.36})`;
+                },
+                onComplete: () => {
+                    prophecyPanel.classList.add('is-growing');
+                    prophecyPanel.style.removeProperty('opacity');
+                    prophecyPanel.style.removeProperty('transform');
+                    prophecyPanel.style.removeProperty('clip-path');
+                    prophecyPanel.style.removeProperty('border-color');
+                }
+            });
+        }
+
+        function enterProphecyPhase() {
+            document.body.classList.add('prophecy-active');
+            hideDeckForProphecy();
+            prophecyQuestion.textContent = PROPHECY_QUESTIONS[selectedTopic] || PROPHECY_QUESTIONS.love;
+            const prompt = buildProphecyPrompt({
+                draws: STATE.placedCards,
+                topic: selectedTopic,
+                question: PROPHECY_QUESTIONS[selectedTopic] || PROPHECY_QUESTIONS.love,
+                localizeCardName: chineseCardName
+            });
+            console.debug('[prophecy] LLM prompt', prompt);
+            prophecyPanel.setAttribute('aria-hidden', 'false');
+            moveCardsIntoProphecyLayout(() => drawProphecyConnections(revealProphecyPanel));
+            setTimeout(() => requestProphecy(prompt), 900);
+        }
+
+        document.getElementById('prophecy-restart').addEventListener('click', () => {
+            document.documentElement.classList.add('ritual-booting');
+            requestAnimationFrame(() => requestAnimationFrame(() => window.location.reload()));
+        });
 
         // --- State Management ---
         const STATE = {
@@ -403,51 +628,31 @@
             isInteracting: false, // Pinching or MouseDown
             heldCard: null, // The THREE object currently being dragged
             drawnCardData: null, // The data of the card being held
+            consumedDeckCard: null,
+            placedCards: [],
+            hoveredSlot: -1,
             deck: [], // Array of remaining card indices
             locked: false // If true, animation is playing, input blocked
         };
 
-        // --- Tarot Data (Simplified RWS) ---
-        // Using a placeholder generator for images, but mapping names correctly.
-        // In a real app, replace `imageUrl` with real CDN links.
-        const TAROT_DATA = [];
-        const SUITS = ['Wands', 'Cups', 'Swords', 'Pentacles'];
-        const RANKS = ['Ace', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Page', 'Knight', 'Queen', 'King'];
-        const MAJOR = [
-            'The Fool', 'The Magician', 'The High Priestess', 'The Empress', 'The Emperor', 
-            'The Hierophant', 'The Lovers', 'The Chariot', 'Strength', 'The Hermit', 
-            'Wheel of Fortune', 'Justice', 'The Hanged Man', 'Death', 'Temperance', 
-            'The Devil', 'The Tower', 'The Star', 'The Moon', 'The Sun', 
-            'Judgement', 'The World'
-        ];
-
-        // Generate Data
-        let idCounter = 0;
-        // Majors
-        MAJOR.forEach((name, i) => {
-            TAROT_DATA.push({ 
-                id: idCounter++, 
-                name: name, 
-                type: 'major',
-                // Using local images
-                img: `/tarot_img/${i < 10 ? '0' + i : i}.jpg`,
-                meaningUp: "新的开始，自由，纯真。", 
-                meaningRev: "鲁莽，冒险，愚蠢。" 
-            });
-        });
-        // Minors (Simplified generation for demo code length)
-        SUITS.forEach(suit => {
-            RANKS.forEach(rank => {
-                TAROT_DATA.push({ 
-                    id: idCounter++, 
-                    name: `${rank} of ${suit}`, 
-                    type: 'minor',
-                    suit,
-                    img: `/tarot_img/${suit}_${rank}.jpg`,
-                    meaningUp: `${suit} 正位含义 - 能量流动`, 
-                    meaningRev: `${suit} 逆位含义 - 能量受阻` 
-                });
-            });
+        // --- Tarot Data: Tarotoo 78-card Rider-Waite-Smith dataset (MIT) ---
+        const MAJOR_ZH = ['愚者', '魔术师', '女祭司', '皇后', '皇帝', '教皇', '恋人', '战车', '力量', '隐者', '命运之轮', '正义', '倒吊人', '死神', '节制', '恶魔', '高塔', '星星', '月亮', '太阳', '审判', '世界'];
+        const RANK_ZH = { Ace: '王牌', Two: '二', Three: '三', Four: '四', Five: '五', Six: '六', Seven: '七', Eight: '八', Nine: '九', Ten: '十', Page: '侍从', Knight: '骑士', Queen: '王后', King: '国王' };
+        const SUIT_ZH = { Wands: '权杖', Cups: '圣杯', Swords: '宝剑', Pentacles: '星币' };
+        const TAROT_DATA = TAROT_SOURCE.map((source) => {
+            const [rank, suit] = source.name.split(' of ');
+            return {
+                id: source.id,
+                name: source.name,
+                type: source.arcana,
+                suit: suit || null,
+                img: source.arcana === 'major'
+                    ? `/tarot_img/${source.id < 10 ? '0' + source.id : source.id}.jpg`
+                    : `/tarot_img/${suit}_${rank}.jpg`,
+                meaningUp: source.meaning_upright,
+                meaningRev: source.meaning_reversed,
+                source
+            };
         });
 
         // Initialize Deck
@@ -530,6 +735,91 @@
         const cardGroup = new THREE.Group();
         scene.add(cardGroup);
 
+        function createShuffleRitualVisuals() {
+            const group = new THREE.Group();
+            const ringMaterials = [];
+            const rings = [
+                { radius: 3.55, tiltX: 0.18, tiltY: 0.1 },
+                { radius: 3.9, tiltX: 1.08, tiltY: 0.42 },
+                { radius: 4.2, tiltX: 0.62, tiltY: 1.18 }
+            ].map((config, index) => {
+                const material = new THREE.MeshBasicMaterial({ color: index === 1 ? 0xf2eee4 : 0xd8b96f, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
+                const ring = new THREE.Mesh(new THREE.TorusGeometry(config.radius, 0.012 + index * 0.005, 8, 160), material);
+                ring.rotation.set(config.tiltX, config.tiltY, index * 0.7);
+                ringMaterials.push(material);
+                group.add(ring);
+                return ring;
+            });
+
+            const starCount = effectTier === 'low' ? 120 : 260;
+            const positions = new Float32Array(starCount * 3);
+            for (let index = 0; index < starCount; index++) {
+                const phi = Math.acos(1 - 2 * (index + 0.5) / starCount);
+                const theta = index * 2.399963;
+                const radius = 3.62 + Math.sin(index * 1.73) * 0.28;
+                positions[index * 3] = radius * Math.sin(phi) * Math.cos(theta);
+                positions[index * 3 + 1] = radius * Math.cos(phi);
+                positions[index * 3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
+            }
+            const starGeometry = new THREE.BufferGeometry();
+            starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const starMaterial = new THREE.PointsMaterial({ color: 0xffdf82, size: 0.045, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
+            const stars = new THREE.Points(starGeometry, starMaterial);
+            group.add(stars);
+
+            const shockMaterial = new THREE.MeshBasicMaterial({ color: 0xffdf82, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
+            const shock = new THREE.Mesh(new THREE.RingGeometry(0.92, 1, 96), shockMaterial);
+            shock.position.y = CONFIG.deckY;
+            group.add(shock);
+            group.visible = false;
+            scene.add(group);
+            return { group, rings, ringMaterials, stars, starMaterial, shock, shockMaterial, animation: null };
+        }
+
+        const shuffleRitualVisuals = createShuffleRitualVisuals();
+
+        function startShuffleRitualVisuals() {
+            const ritual = shuffleRitualVisuals;
+            ritual.animation?.pause?.();
+            ritual.group.visible = effectTier !== 'reduced';
+            if (effectTier === 'reduced') return;
+            ritual.group.scale.setScalar(0.36);
+            ritual.rings.forEach((ring, index) => ring.rotation.z = index * 0.7);
+            ritual.ringMaterials.forEach(material => { material.opacity = 0; });
+            ritual.starMaterial.opacity = 0;
+            ritual.shockMaterial.opacity = 0;
+            ritual.shock.scale.setScalar(0.1);
+            const state = { progress: 0 };
+            ritual.animation = animeAnimate(state, {
+                progress: 1,
+                duration: 4050,
+                ease: 'linear',
+                onUpdate: () => {
+                    const time = state.progress * 4.05;
+                    const gather = Math.min(1, time / 2.8);
+                    const collapse = Math.max(0, Math.min(1, (time - 2.72) / 1.05));
+                    const intro = 1 - Math.pow(1 - Math.min(1, gather / 0.28), 3);
+                    const breathing = 1 + Math.sin(gather * Math.PI * 7) * 0.035;
+                    ritual.group.scale.setScalar((0.36 + intro * 0.64) * breathing);
+                    ritual.rings[0].rotation.z = gather * Math.PI * 3.8;
+                    ritual.rings[1].rotation.z = -gather * Math.PI * 3.1 + 0.7;
+                    ritual.rings[2].rotation.z = gather * Math.PI * 2.4 + 1.4;
+                    ritual.stars.rotation.y = gather * Math.PI * 4.2;
+                    ritual.stars.rotation.x = Math.sin(gather * Math.PI * 2) * 0.22;
+                    const fade = collapse > 0 ? Math.pow(1 - collapse, 2) : intro;
+                    ritual.ringMaterials.forEach((material, index) => { material.opacity = fade * (0.34 + index * 0.1); });
+                    ritual.starMaterial.opacity = fade * 0.78;
+                    const shockProgress = Math.max(0, Math.min(1, (collapse - 0.48) / 0.52));
+                    ritual.shock.scale.setScalar(0.1 + shockProgress * 2.7);
+                    ritual.shockMaterial.opacity = Math.sin(shockProgress * Math.PI) * 0.9;
+                },
+                onComplete: () => {
+                    ritual.group.visible = false;
+                    ritual.animation = null;
+                }
+            });
+        }
+
         // Raycaster
         const raycaster = new THREE.Raycaster();
         const cursorMesh = new THREE.Mesh(
@@ -562,23 +852,48 @@
         // --- 78-card Deck Visuals ---
         let shuffleCards = [];
         let deckOutline = null;
+        let deckBaseShadow = null;
+        const slotGroup = new THREE.Group();
+        const cardSlots = [];
+        const cardAnimations = [];
+        const cardLabelAnimations = [];
+        let slotRevealProgress = 0;
+        let slotsRevealing = false;
+        scene.add(slotGroup);
+        slotGroup.visible = false;
 
         function spawnDeck() {
             const geometry = new THREE.BoxGeometry(CONFIG.cardWidth, CONFIG.cardHeight, 0.025);
-            const material = new THREE.MeshStandardMaterial({ 
+            const deckBackMaterial = new THREE.MeshStandardMaterial({
                 color: 0xffffff,
                 map: backTexture,
                 emissive: 0x5a441c,
                 emissiveIntensity: 0.28,
                 roughness: 0.62
             });
+            const deckEdgeMaterial = new THREE.MeshStandardMaterial({
+                color: 0xb9a878,
+                emissive: 0x2d2412,
+                emissiveIntensity: 0.2,
+                roughness: 0.9,
+                metalness: 0.04
+            });
+            const deckMaterials = [deckEdgeMaterial, deckEdgeMaterial, deckEdgeMaterial, deckEdgeMaterial, deckBackMaterial, deckBackMaterial];
             shuffleCards = STATE.deck.map((cardId, index) => {
-                const card = new THREE.Mesh(geometry, material);
-                card.position.set(0, -2, index * 0.006);
+                const card = new THREE.Mesh(geometry, deckMaterials);
+                card.position.set(0, CONFIG.deckY, index * 0.006);
                 card.userData = { isDeck: false, isShuffleCard: true, cardId };
                 cardGroup.add(card);
                 return card;
             });
+            deckBaseShadow = new THREE.Mesh(
+                new THREE.PlaneGeometry(CONFIG.cardWidth + 0.42, CONFIG.cardHeight + 0.38),
+                new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.52, depthWrite: false })
+            );
+            deckBaseShadow.position.set(0.08, CONFIG.deckY - 0.1, -0.08);
+            deckBaseShadow.scale.setScalar(CONFIG.deckScale);
+            deckBaseShadow.raycast = () => {};
+            cardGroup.add(deckBaseShadow);
             deckOutline = new THREE.LineSegments(
                 new THREE.EdgesGeometry(geometry),
                 new THREE.LineBasicMaterial({ color: 0xd8b96f, transparent: true, opacity: 0.95 })
@@ -586,6 +901,21 @@
             deckOutline.raycast = () => {};
             shuffleCards.at(-1).add(deckOutline);
             return shuffleCards;
+        }
+
+        function styleDeckPile() {
+            const topIndex = shuffleCards.length - 1;
+            shuffleCards.forEach((card, index) => {
+                const topCard = index === topIndex;
+                card.position.set(
+                    topCard ? 0 : Math.sin(index * 1.73) * 0.045,
+                    CONFIG.deckY + (topCard ? 0 : Math.cos(index * 1.19) * 0.024),
+                    index * 0.009
+                );
+                card.rotation.set(0, 0, topCard ? 0 : Math.sin(index * 0.83) * 0.008);
+                card.scale.setScalar(CONFIG.deckScale);
+            });
+            if (deckBaseShadow) deckBaseShadow.visible = true;
         }
 
         function promoteTopDeckCard() {
@@ -601,51 +931,125 @@
 
         function consumeTopDeckCard() {
             const topCard = shuffleCards.find(card => card.userData.isDeck);
-            if (!topCard) return;
+            if (!topCard) return null;
             topCard.userData.isDeck = false;
             topCard.visible = false;
             promoteTopDeckCard();
+            return topCard;
         }
         spawnDeck();
 
-        const shuffleElements = {
-            status: document.getElementById('shuffle-status'),
-            action: document.getElementById('shuffle-action'),
-            skip: document.getElementById('shuffle-skip'),
-        };
-        const SHUFFLE_LABELS = {
-            converge: 'CONVERGE · 牌组收束',
-            sphere: 'ASCEND · 球状散开',
-            orbit: 'ORBIT · 星轨洗牌',
-            cut: 'CUT · 分叠切牌',
-            merge: 'MERGE · 交错合拢',
-            ready: 'DECK READY · 牌已就绪',
-        };
-        const shuffleSequence = createShuffleSequence({
-            reducedMotion: effectTier === 'reduced',
-            radius: window.innerWidth <= 520 ? 2.65 : 3.4,
-            deckY: -2,
-        });
-        let lastShufflePhase = 'idle';
+        function createCardSlots() {
+            const slotGeometry = new THREE.PlaneGeometry(CONFIG.cardWidth * CONFIG.slotScale, CONFIG.cardHeight * CONFIG.slotScale);
+            [-2.35, 0, 2.35].forEach((x, index) => {
+                const material = new THREE.MeshBasicMaterial({ color: 0xd8b96f, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false });
+                const surface = new THREE.Mesh(slotGeometry, material);
+                surface.position.set(x, 1.45, 0.03);
+                surface.userData.slotIndex = index;
+                const border = new THREE.LineSegments(
+                    new THREE.EdgesGeometry(slotGeometry),
+                    new THREE.LineBasicMaterial({ color: 0xd8b96f, transparent: true, opacity: 0 })
+                );
+                border.raycast = () => {};
+                surface.add(border);
+                slotGroup.add(surface);
+                cardSlots.push({ x, y: 1.45, z: 0.18 + index * 0.01, occupied: false, surface, border, card: null, draw: null });
+            });
+        }
 
-        function updateShuffleUi() {
-            const shuffleState = shuffleSequence.getState();
-            if (shuffleState.phase === lastShufflePhase) return;
-            lastShufflePhase = shuffleState.phase;
-            shuffleElements.status.textContent = SHUFFLE_LABELS[shuffleState.phase] || 'DECK DORMANT · 等待洗牌';
-            shuffleElements.skip.hidden = !shuffleState.active;
-            shuffleElements.action.hidden = shuffleState.active;
-            if (shuffleState.ready) {
-                shuffleElements.action.hidden = false;
-                shuffleElements.action.textContent = '重新洗牌';
+        function setHoveredSlot(index) {
+            if (STATE.hoveredSlot === index) return;
+            STATE.hoveredSlot = index;
+            cardSlots.forEach((slot, slotIndex) => {
+                const active = slotIndex === index && !slot.occupied;
+                slot.surface.material.opacity = active ? 0.16 : 0.035;
+                slot.border.material.opacity = active ? 1 : (slot.occupied ? 0.12 : 0.38);
+                slot.border.material.color.set(active ? 0xffdf82 : 0xd8b96f);
+            });
+        }
+
+        function chineseCardName(card) {
+            if (card.type === 'major') return MAJOR_ZH[card.id] || card.name;
+            const [rank, , suit] = card.name.split(' ');
+            return `${SUIT_ZH[suit] || suit}${RANK_ZH[rank] || rank}`;
+        }
+
+        function createCardNameLabel(draw, slot) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 640;
+            canvas.height = 200;
+            const context = canvas.getContext('2d');
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.fillStyle = '#f2eee4';
+            context.shadowColor = 'rgba(216,185,111,.75)';
+            context.shadowBlur = 18;
+            context.font = '600 28px Georgia, serif';
+            context.fillText(draw.data.name.toUpperCase(), canvas.width / 2, 64);
+            context.shadowBlur = 12;
+            context.font = '500 30px Inter, sans-serif';
+            context.fillText(chineseCardName(draw.data), canvas.width / 2, 136);
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.colorSpace = THREE.SRGBColorSpace;
+            texture.minFilter = THREE.LinearFilter;
+            const material = new THREE.SpriteMaterial({ map: texture, transparent: true, opacity: 0, depthTest: false });
+            const label = new THREE.Sprite(material);
+            const finalY = slot.y + CONFIG.cardHeight * CONFIG.slotScale * 0.5 + 0.38;
+            label.position.set(slot.x, finalY - 0.14, slot.z + 0.25);
+            label.scale.set(3.2, 0.78, 1);
+            label.renderOrder = 20;
+            scene.add(label);
+            slot.label = label;
+            cardLabelAnimations.push({ label, elapsed: 0, duration: 0.75, startY: finalY - 0.14, finalY });
+        }
+
+        function updateCardLabels(dt) {
+            for (let index = cardLabelAnimations.length - 1; index >= 0; index--) {
+                const animation = cardLabelAnimations[index];
+                animation.elapsed = Math.min(animation.duration, animation.elapsed + dt);
+                const progress = animation.elapsed / animation.duration;
+                const eased = 1 - Math.pow(1 - progress, 3);
+                animation.label.material.opacity = eased;
+                animation.label.position.y = THREE.MathUtils.lerp(animation.startY, animation.finalY, eased);
+                if (progress === 1) cardLabelAnimations.splice(index, 1);
             }
         }
 
+
+        function revealCardSlots() {
+            slotRevealProgress = 0;
+            slotsRevealing = true;
+            slotGroup.visible = true;
+        }
+
+        function updateSlotReveal(dt) {
+            if (!slotsRevealing) return;
+            slotRevealProgress = Math.min(1, slotRevealProgress + dt / 0.9);
+            const eased = 1 - Math.pow(1 - slotRevealProgress, 3);
+            cardSlots.forEach((slot) => {
+                slot.surface.material.opacity = 0.035 * eased;
+                slot.border.material.opacity = 0.38 * eased;
+            });
+            if (slotRevealProgress === 1) {
+                slotsRevealing = false;
+                STATE.locked = false;
+                advanceOnboarding('shuffle-complete');
+            }
+        }
+
+        createCardSlots();
+
+        const shuffleSequence = createShuffleSequence({
+            reducedMotion: effectTier === 'reduced',
+            radius: window.innerWidth <= 520 ? 2.65 : 3.4,
+            deckY: CONFIG.deckY,
+        });
+
         function finishShuffle() {
-            STATE.locked = false;
+            styleDeckPile();
+            revealCardSlots();
             promoteTopDeckCard();
-            updateShuffleUi();
-            advanceOnboarding('shuffle-complete');
         }
 
         function startShuffle() {
@@ -656,14 +1060,15 @@
                 card.userData.isDeck = false;
             });
             if (deckOutline) deckOutline.visible = false;
+            if (deckBaseShadow) deckBaseShadow.visible = false;
+            slotGroup.visible = false;
+            slotsRevealing = false;
+            slotRevealProgress = 0;
+            startShuffleRitualVisuals();
             shuffleSequence.start(shuffleCards);
-            lastShufflePhase = 'idle';
-            updateShuffleUi();
         }
 
         shuffleSequence.onComplete(finishShuffle);
-        shuffleElements.action.addEventListener('click', startShuffle);
-        shuffleElements.skip.addEventListener('click', () => shuffleSequence.skip());
 
         // --- Ash Logic ---
         function triggerAshEffect(mesh) {
@@ -736,7 +1141,6 @@
             if (STATE.deck.length === 0) return null;
             const randomIndex = Math.floor(Math.random() * STATE.deck.length);
             const cardId = STATE.deck.splice(randomIndex, 1)[0];
-            uiMotion.updateStatus(document.getElementById('deck-count'), String(STATE.deck.length));
 
             const isReversed = Math.random() < 0.5;
             const cardData = TAROT_DATA.find(c => c.id === cardId);
@@ -745,12 +1149,10 @@
         }
 
         function createHeldCard() {
+            if (STATE.placedCards.length >= 3) return;
             const draw = drawRandomCard();
             if(!draw) return;
-            consumeTopDeckCard();
-            shuffleElements.action.disabled = true;
-            shuffleElements.action.hidden = true;
-            shuffleElements.status.textContent = 'CARD CHOSEN · 牌已选定';
+            STATE.consumedDeckCard = consumeTopDeckCard();
 
             STATE.drawnCardData = draw;
 
@@ -813,7 +1215,9 @@
             mesh.add(cardOutline);
             
             // Initial position (at deck)
-            mesh.position.set(0, -2, 0);
+            mesh.position.set(0, CONFIG.deckY, 0.5);
+            mesh.scale.setScalar(CONFIG.deckScale);
+            mesh.rotation.y = Math.PI;
             
             // Orientation
             if (draw.isReversed) {
@@ -824,56 +1228,74 @@
             // Start invisible/small? No, just appear at hand
             scene.add(mesh);
             STATE.heldCard = mesh;
-            elementEffect.prepare(draw.data, draw.isReversed ? 'reversed' : 'upright', mesh.position);
             advanceOnboarding('card-grabbed');
             return mesh;
         }
 
-        function confirmResult() {
+        function cancelHeldCard() {
             if (!STATE.heldCard || STATE.locked) return;
-            STATE.locked = true;
-            uiMotion.focusReading();
-
-            const data = STATE.drawnCardData.data;
-            const isRev = STATE.drawnCardData.isReversed;
-            
-            // 1. UI Show
-            const title = document.getElementById('result-title');
-            const orientationMarker = document.getElementById('orientation-marker');
-            const meaning = document.getElementById('result-meaning');
-            const display = document.getElementById('result-display');
-            
-            title.textContent = data.name;
-            updateOrientationMarker(orientationMarker, isRev);
-            meaning.innerText = isRev ? data.meaningRev : data.meaningUp;
-            lastReadingCard = { cardName: data.name, orientation: isRev ? 'reversed' : 'upright', standardMeaning: isRev ? data.meaningRev : data.meaningUp };
-            readingController.requestReading(lastReadingCard);
-            
-            display.style.opacity = 1;
-            uiMotion.revealResult();
-            advanceOnboarding('card-revealed');
-
-            // 2. History Log
-            const historyPanel = document.getElementById('history-panel');
-            const log = document.createElement('div');
-            log.className = 'history-item';
-            log.innerHTML = `<span class="history-name">${data.name} ${isRev ? '(逆)' : ''}</span>`;
-            historyPanel.prepend(log);
-            uiMotion.revealHistory(log);
-
-            // 3. Ash Effect
-            elementEffect.reveal();
-            setTimeout(() => elementEffect.settle(), 650);
-            triggerAshEffect(STATE.heldCard);
+            scene.remove(STATE.heldCard);
+            STATE.deck.push(STATE.drawnCardData.data.id);
+            if (STATE.consumedDeckCard) STATE.consumedDeckCard.visible = true;
             STATE.heldCard = null;
+            STATE.drawnCardData = null;
+            STATE.consumedDeckCard = null;
+            setHoveredSlot(-1);
+            promoteTopDeckCard();
+        }
 
-            // 4. Reset after delay
-            setTimeout(() => {
-                display.style.opacity = 0;
-                elementEffect.dispose();
-                STATE.locked = false;
-                uiMotion.releaseReading();
-            }, 4000);
+        function placeHeldCard(slotIndex) {
+            const slot = cardSlots[slotIndex];
+            if (!STATE.heldCard || STATE.locked || !slot || slot.occupied) return;
+            STATE.locked = true;
+            const card = STATE.heldCard;
+            const draw = STATE.drawnCardData;
+            slot.occupied = true;
+            slot.card = card;
+            slot.draw = draw;
+            STATE.placedCards.push({ slotIndex, card, ...draw });
+            STATE.heldCard = null;
+            STATE.drawnCardData = null;
+            STATE.consumedDeckCard = null;
+            setHoveredSlot(-1);
+            cardAnimations.push({
+                card,
+                slot,
+                elapsed: 0,
+                duration: CONFIG.flipDuration,
+                startPosition: card.position.clone(),
+                startScale: card.scale.clone(),
+                startRotationY: card.rotation.y,
+                onComplete() {
+                    createCardNameLabel(draw, slot);
+                    const complete = STATE.placedCards.length === 3;
+                    STATE.locked = complete;
+                    if (complete) {
+                        onboarding.complete();
+                        renderOnboarding();
+                        enterProphecyPhase();
+                    }
+                }
+            });
+        }
+
+        function updateCardAnimations(dt) {
+            for (let index = cardAnimations.length - 1; index >= 0; index--) {
+                const animation = cardAnimations[index];
+                animation.elapsed = Math.min(animation.duration, animation.elapsed + dt);
+                const linear = animation.elapsed / animation.duration;
+                const eased = linear < 0.5 ? 4 * linear * linear * linear : 1 - Math.pow(-2 * linear + 2, 3) / 2;
+                animation.card.position.lerpVectors(animation.startPosition, new THREE.Vector3(animation.slot.x, animation.slot.y, animation.slot.z), eased);
+                animation.card.scale.lerpVectors(animation.startScale, new THREE.Vector3(CONFIG.slotScale, CONFIG.slotScale, CONFIG.slotScale), eased);
+                animation.card.rotation.y = animation.startRotationY + Math.PI * eased;
+                if (linear === 1) {
+                    animation.card.position.set(animation.slot.x, animation.slot.y, animation.slot.z);
+                    animation.card.rotation.y = Math.PI * 2;
+                    animation.slot.border.material.opacity = 0.12;
+                    cardAnimations.splice(index, 1);
+                    animation.onComplete();
+                }
+            }
         }
 
         function updateInteraction(dt) {
@@ -881,7 +1303,7 @@
 
             // Raycasting
             raycaster.setFromCamera(STATE.pointer, camera);
-            const intersects = raycaster.intersectObjects(cardGroup.children);
+            const intersects = raycaster.intersectObjects(cardGroup.children, true);
             if (intersects.some(hit => hit.object.userData.isDeck)) advanceOnboarding('deck-targeted');
             
             // Visual Cursor
@@ -891,8 +1313,9 @@
             const distance = (0 - camera.position.z) / dir.z; // Project to Z=0 plane
             const pos = camera.position.clone().add(dir.multiplyScalar(distance));
             
-            // Smooth cursor movement
-            cursorMesh.position.lerp(pos, 0.2);
+            // Mouse input should feel immediate; gesture input keeps smoothing to reduce camera jitter.
+            if (STATE.mode === 'mouse') cursorMesh.position.copy(pos);
+            else cursorMesh.position.lerp(pos, 0.2);
             
             // --- Logic ---
             const gesture = STATE.gesture;
@@ -920,36 +1343,40 @@
                 targetPos.z = depthForApparentScale(CONFIG.cameraZ, CONFIG.heldCardScale);
                 targetPos.y += 0.5; // Slightly above finger
 
-                STATE.heldCard.position.lerp(targetPos, CONFIG.dragSpeed);
-                
-                // Slight rotation following movement
-                STATE.heldCard.rotation.y = (STATE.pointer.x * 0.5);
-                if(STATE.drawnCardData.isReversed) {
-                     STATE.heldCard.rotation.z = Math.PI + (STATE.pointer.x * 0.1);
+                const snapRadius = STATE.hoveredSlot >= 0 ? CONFIG.slotDetachRadius : CONFIG.slotSnapRadius;
+                const slotIndex = findNearestAvailableSlot(pos, cardSlots, snapRadius);
+                setHoveredSlot(slotIndex);
+                if (slotIndex >= 0) {
+                    const slot = cardSlots[slotIndex];
+                    const slotScale = new THREE.Vector3(CONFIG.slotScale, CONFIG.slotScale, CONFIG.slotScale);
+                    STATE.heldCard.position.lerp(new THREE.Vector3(slot.x, slot.y, slot.z), 0.32);
+                    STATE.heldCard.scale.lerp(slotScale, 0.28);
+                    STATE.heldCard.rotation.y = THREE.MathUtils.lerp(STATE.heldCard.rotation.y, Math.PI, 0.24);
+                    STATE.heldCard.rotation.z = THREE.MathUtils.lerp(STATE.heldCard.rotation.z, STATE.drawnCardData.isReversed ? Math.PI : 0, 0.24);
                 } else {
-                     STATE.heldCard.rotation.z = (STATE.pointer.x * 0.1);
+                    const heldScale = new THREE.Vector3(1, 1, 1);
+                    STATE.heldCard.position.lerp(targetPos, CONFIG.dragSpeed);
+                    STATE.heldCard.scale.lerp(heldScale, 0.2);
+                    STATE.heldCard.rotation.y = Math.PI + (STATE.pointer.x * 0.12);
+                    STATE.heldCard.rotation.z = (STATE.drawnCardData.isReversed ? Math.PI : 0) + (STATE.pointer.x * 0.1);
                 }
 
-                // 3. Confirming
+                // 3. Drop into a nearby slot
                 if (isFist || (STATE.mode === 'mouse' && !STATE.isInteracting && STATE.heldCard)) {
-                    // In mouse mode, releasing click drops/confirms
-                    confirmResult();
+                    if (slotIndex >= 0) placeHeldCard(slotIndex);
+                    else if (STATE.mode === 'mouse') cancelHeldCard();
                 }
             }
         }
 
         // --- MediaPipe Hands Setup ---
         const videoElement = document.getElementById('input_video');
-        const statusText = document.getElementById('status-text');
-        const gestureIcon = document.getElementById('gesture-icon');
 
         function onResults(results) {
             if (STATE.mode !== 'gesture') return;
 
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
                 STATE.handVisible = true;
-                statusText.innerText = "已连接";
-                statusText.style.color = "#0f0";
                 cameraNotice = '';
                 advanceOnboarding('hand-visible');
                 
@@ -991,19 +1418,14 @@
 
                 if (isFist) {
                     STATE.gesture = 'FIST';
-                    gestureIcon.innerText = '✊';
                 } else if (dist < CONFIG.zIndexPinch) {
                     STATE.gesture = 'PINCH';
-                    gestureIcon.innerText = '👌';
                 } else {
                     STATE.gesture = 'OPEN';
-                    gestureIcon.innerText = '✋';
                 }
 
             } else {
                 STATE.handVisible = false;
-                statusText.innerText = "未检测到手部";
-                statusText.style.color = "#ff0";
             }
         }
 
@@ -1036,10 +1458,8 @@
             const loading = document.getElementById('loading');
             loading.textContent = '初始化神谕系统 (加载模型中)...';
             loading.hidden = false;
-            statusText.innerText = '等待摄像头授权...';
             cameraStartPromise = cameraUtils.start().then(() => {
                 loading.hidden = true;
-                statusText.innerText = '请将手放入画面';
                 clearTimeout(noHandTimer);
                 noHandTimer = setTimeout(() => {
                     if (STATE.mode !== 'gesture' || STATE.handVisible) return;
@@ -1051,8 +1471,6 @@
                 console.error(err);
                 cameraStartPromise = null;
                 loading.hidden = true;
-                statusText.innerText = '摄像头不可用';
-                statusText.style.color = '#ffb35c';
                 cameraNotice = '无法启动摄像头。请检查浏览器权限，或改用鼠标继续这次抽牌。';
                 renderOnboarding({ focus: true });
                 return false;
@@ -1065,14 +1483,13 @@
             const btn = document.getElementById('btn-mode');
             STATE.mode = mode;
             STATE.isInteracting = false;
+            cursorMesh.visible = mode !== 'mouse';
             if (mode === 'mouse') {
                 btn.innerText = "切换模式: 🖱️ 鼠标";
-                statusText.innerText = "鼠标模式";
                 videoElement.pause();
                 STATE.gesture = 'OPEN';
             } else {
                 btn.innerText = "切换模式: ✋ 手势";
-                statusText.innerText = '等待摄像头...';
                 if (videoElement.srcObject) videoElement.play();
             }
             if (replayGuide && onboarding.getState().active) {
@@ -1082,26 +1499,33 @@
             }
         }
 
-        function toggleMode(forceMouse = false) {
-            const nextMode = forceMouse || STATE.mode === 'gesture' ? 'mouse' : 'gesture';
+        function toggleMode() {
+            const nextMode = STATE.mode === 'gesture' ? 'mouse' : 'gesture';
             applyInputMode(nextMode);
             if (nextMode === 'gesture') startGestureCamera();
         }
 
-        document.getElementById('btn-mode').addEventListener('click', () => toggleMode());
+        document.getElementById('btn-mode').addEventListener('click', toggleMode);
 
+        const customCursor = document.getElementById('custom-cursor');
         window.addEventListener('mousemove', (e) => {
+            customCursor.style.transform = `translate3d(${e.clientX}px,${e.clientY}px,0)`;
+            customCursor.classList.add('is-visible');
             if (STATE.mode === 'mouse') {
                 STATE.pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
                 STATE.pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
             }
         });
+        document.documentElement.addEventListener('mouseleave', () => customCursor.classList.remove('is-visible'));
+        document.documentElement.addEventListener('mouseenter', () => customCursor.classList.add('is-visible'));
 
         window.addEventListener('mousedown', () => {
+            customCursor.classList.add('is-pressed');
             if(STATE.mode === 'mouse') STATE.isInteracting = true;
         });
 
         window.addEventListener('mouseup', () => {
+            customCursor.classList.remove('is-pressed');
             if(STATE.mode === 'mouse') STATE.isInteracting = false;
         });
 
@@ -1111,8 +1535,6 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        if (onboarding.getState().completed) startGestureCamera();
-
         // --- Animation Loop ---
         const clock = new THREE.Clock();
 
@@ -1121,7 +1543,9 @@
             const dt = clock.getDelta();
 
             shuffleSequence.update(dt);
-            updateShuffleUi();
+            updateSlotReveal(dt);
+            updateCardAnimations(dt);
+            updateCardLabels(dt);
             updateInteraction(dt);
             updateParticles(dt);
             elementEffect.update(dt);

@@ -3,11 +3,11 @@ import { createReadStream, existsSync, statSync } from 'node:fs';
 import { extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createReadingService, ReadingServiceError } from './src/server/reading-service.mjs';
+import { createProphecyService } from './src/server/prophecy-service.mjs';
 import { createRateLimiter } from './src/server/rate-limit.mjs';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
-const animeModule = resolve(root, 'node_modules/animejs/dist/bundles/anime.esm.js');
-const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.svg': 'image/svg+xml' };
+const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.css': 'text/css; charset=utf-8', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.svg': 'image/svg+xml' };
 
 function headers(res) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -36,12 +36,22 @@ async function readJson(req) {
   }
 }
 
-export function createAppServer({ readingService, rateLimit } = {}) {
+export function createAppServer({ readingService, prophecyService, rateLimit } = {}) {
   const service = readingService ?? createReadingService({ apiKey: process.env.DEEPSEEK_API_KEY, model: process.env.DEEPSEEK_MODEL });
+  const prophecy = prophecyService ?? createProphecyService({ apiKey: process.env.DEEPSEEK_API_KEY, model: process.env.DEEPSEEK_MODEL });
   const allow = createRateLimiter(rateLimit);
   return http.createServer(async (req, res) => {
     headers(res);
     const url = new URL(req.url, 'http://localhost');
+    if (url.pathname === '/api/prophecy') {
+      if (req.method !== 'POST') { res.setHeader('Allow', 'POST'); return json(res, 405, { error: { code: 'METHOD_NOT_ALLOWED', message: '仅支持 POST' } }); }
+      if (!allow(req.socket.remoteAddress ?? 'unknown')) return json(res, 429, { error: { code: 'RATE_LIMITED', message: '请求过于频繁，请稍后再试' } });
+      try { return json(res, 200, await prophecy.generate(await readJson(req))); }
+      catch (error) {
+        const safe = error instanceof ReadingServiceError ? error : new ReadingServiceError('INTERNAL_ERROR', '服务暂不可用');
+        return json(res, safe.status, { error: { code: safe.code, message: safe.message.replace(/^\w+:\s*/, '') } });
+      }
+    }
     if (url.pathname === '/api/reading') {
       if (req.method !== 'POST') { res.setHeader('Allow', 'POST'); return json(res, 405, { error: { code: 'METHOD_NOT_ALLOWED', message: '仅支持 POST' } }); }
       if (!allow(req.socket.remoteAddress ?? 'unknown')) return json(res, 429, { error: { code: 'RATE_LIMITED', message: '请求过于频繁，请稍后再试' } });
@@ -57,12 +67,6 @@ export function createAppServer({ readingService, rateLimit } = {}) {
     if (!['GET', 'HEAD'].includes(req.method)) return json(res, 405, { error: { code: 'METHOD_NOT_ALLOWED', message: '不支持该方法' } });
     let pathname;
     try { pathname = decodeURIComponent(url.pathname); } catch { res.writeHead(400); return res.end(); }
-    if (pathname === '/vendor/anime.esm.js') {
-      if (!existsSync(animeModule) || !statSync(animeModule).isFile()) { res.writeHead(404); return res.end('Not Found'); }
-      res.writeHead(200, { 'Content-Type': mime['.js'] });
-      if (req.method === 'HEAD') return res.end();
-      return createReadStream(animeModule).pipe(res);
-    }
     if (pathname.startsWith('/vendor/')) { res.writeHead(404); return res.end('Not Found'); }
     if (pathname === '/') pathname = '/index.html';
     const file = resolve(root, `.${pathname}`);

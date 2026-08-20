@@ -11,7 +11,19 @@ const {
   createInputEdgeState,
   resetInputEdgeState,
   updateInputEdgeState,
+  findNearestAvailableSlot,
 } = interactionState;
+
+test("finds the nearest empty card slot inside the snap radius", () => {
+  const slots = [
+    { x: -3, y: 1, occupied: false },
+    { x: 0, y: 1, occupied: true },
+    { x: 3, y: 1, occupied: false },
+  ];
+  assert.equal(findNearestAvailableSlot({ x: 2.7, y: 1.1 }, slots, 1.5), 2);
+  assert.equal(findNearestAvailableSlot({ x: 0, y: 1 }, slots, 1.5), -1);
+  assert.equal(findNearestAvailableSlot({ x: 0, y: -2 }, slots, 1.5), -1);
+});
 
 test("requires aiming before a card can be grabbed", () => {
   const idle = createInteractionState();
@@ -121,52 +133,67 @@ test("recognizes a fist rising edge after reset", () => {
   assert.equal(updateInputEdgeState(nextFist.state, "fistActive", true).rising, false);
 });
 
-test("page exposes central altar guidance and embedded deck fallback", async () => {
+test("page exposes a three-card spread and a layered deck", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
-  assert.match(html, /id="interaction-guidance"/);
-  assert.match(html, /function setDeckVisualState/);
-  assert.match(html, /function createDeckFallbackTexture/);
-  assert.match(html, /new THREE\.CanvasTexture/);
-  assert.doesNotMatch(html, /tarot_img\/card-back\.svg/);
+  assert.doesNotMatch(html, /id="spread-progress"/);
+  assert.match(html, /\[-2\.35, 0, 2\.35\]/);
+  assert.match(html, /STATE\.deck\.map\(\(cardId, index\)/);
+  assert.match(html, /index \* 0\.006/);
+  assert.match(html, /function styleDeckPile\(\)/);
+  assert.match(html, /deckEdgeMaterial/);
+  assert.match(html, /deckBaseShadow/);
+  assert.match(html, /Math\.sin\(index \* 1\.73\)/);
+  assert.match(html, /deckY: -2\.65/);
+  assert.match(html, /deckScale: 0\.84/);
+  assert.match(html, /function updateSlotReveal\(dt\)/);
+  assert.match(html, /slotGroup\.visible = false/);
 });
 
-test("page raycasts nested central altar layers", async () => {
+test("page raycasts the layered deck recursively", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
-  assert.match(html, /cardGroup\.add\(deckRoot\)/);
-  assert.match(html, /layer\.userData = \{ isDeck: true \}/);
   assert.match(html, /raycaster\.intersectObjects\(cardGroup\.children,\s*true\)/);
+  assert.match(html, /topCard\.userData\.isDeck = true/);
 });
 
-test("page renders every visual from one phase entry point", async () => {
+test("page highlights and snaps only to empty nearby slots", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
-  assert.match(
-    html,
-    /function renderInteractionPhase\(phase\) \{\s*renderGuidance\(phase\);\s*setDeckVisualState\(phase\);\s*setRevealZoneVisualState\(phase\);\s*\}/,
-  );
-  assert.match(html, /renderInteractionPhase\("IDLE"\)/);
+  assert.match(html, /findNearestAvailableSlot\(pos, cardSlots, snapRadius\)/);
+  assert.match(html, /setHoveredSlot\(slotIndex\)/);
+  assert.match(html, /if \(slotIndex >= 0\) placeHeldCard\(slotIndex\)/);
+  assert.match(html, /slotDetachRadius/);
+  assert.match(html, /STATE\.heldCard\.scale\.lerp\(slotScale, 0\.28\)/);
+  assert.match(html, /new THREE\.Vector3\(slot\.x, slot\.y, slot\.z\)/);
+  assert.match(html, /STATE\.heldCard\.scale\.lerp\(heldScale, 0\.2\)/);
 });
 
-test("page creates held cards at the central altar", async () => {
+test("page returns a mouse-dropped card outside the slots to the deck", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
-  assert.match(html, /deckRoot\.getWorldPosition\(new THREE\.Vector3\(\)\)/);
-  assert.match(html, /mesh\.position\.copy\(deckWorldPosition\)/);
+  assert.match(html, /function cancelHeldCard\(\)/);
+  assert.match(html, /STATE\.deck\.push\(STATE\.drawnCardData\.data\.id\)/);
+  assert.match(html, /else if \(STATE\.mode === 'mouse'\) cancelHeldCard\(\)/);
 });
 
-test("page routes input through the interaction reducer", async () => {
+test("page flips each placed card and stops after the third", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
-  assert.match(html, /function dispatchInteraction/);
-  assert.match(html, /READY_TO_CONFIRM/);
-  assert.match(html, /transitionInteraction/);
-});
-
-test("confirm keeps the revealed card before delayed cleanup without ash", async () => {
-  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
-  const confirmStart = html.indexOf("function confirmResult()");
-  const confirmEnd = html.indexOf("function isHeldCardInsideRevealZone()", confirmStart);
-  const confirmSource = html.slice(confirmStart, confirmEnd);
-
-  assert.doesNotMatch(confirmSource, /triggerAshEffect/);
-  assert.match(confirmSource, /setTimeout\(\(\) => \{/);
-  assert.match(confirmSource, /scene\.remove\(revealedCard\)/);
-  assert.match(confirmSource, /STATE\.heldCard = null/);
+  assert.match(html, /animation\.card\.rotation\.y = animation\.startRotationY \+ Math\.PI \* eased/);
+  assert.match(html, /const complete = STATE\.placedCards\.length === 3/);
+  assert.match(html, /STATE\.locked = complete/);
+  const placement = html.slice(html.indexOf("function placeHeldCard"), html.indexOf("function updateCardAnimations"));
+  assert.doesNotMatch(placement, /requestReading|triggerAshEffect|setTimeout/);
+  assert.match(html, /function createCardNameLabel\(draw, slot\)/);
+  assert.match(html, /function chineseCardName\(card\)/);
+  assert.match(html, /updateCardLabels\(dt\)/);
+  assert.match(html, /fillText\(draw\.data\.name\.toUpperCase\(\), canvas\.width \/ 2, 64\)/);
+  assert.match(html, /fillText\(chineseCardName\(draw\.data\), canvas\.width \/ 2, 136\)/);
+  assert.match(html, /id="prophecy-panel"/);
+  assert.match(html, /function enterProphecyPhase\(\)/);
+  assert.match(html, /prophecyPanel\.classList\.add\('is-growing'\)/);
+  assert.match(html, /window\.location\.reload\(\)/);
+  assert.match(html, /id="prophecy-flow"/);
+  assert.match(html, /import \{ buildProphecyPrompt \} from '\.\/src\/client\/prophecy-prompt\.js'/);
+  assert.match(html, /const prompt = buildProphecyPrompt\(\{/);
+  assert.match(html, /console\.debug\('\[prophecy\] LLM prompt', prompt\)/);
+  assert.match(html, /function moveCardsIntoProphecyLayout\(onComplete\)/);
+  assert.match(html, /moveCardsIntoProphecyLayout\(\(\) => drawProphecyConnections/);
+  assert.match(html, /function hideDeckForProphecy\(\)/);
 });
