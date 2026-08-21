@@ -1,228 +1,207 @@
-# 🔮 Ether Tarot
+# AI手势塔罗
 
-## Windows 快捷启动
+一款将 AI 手势交互与 AI 三牌解读融入核心玩法的浏览器塔罗游戏。
 
-在项目根目录运行：
+玩家可以直接用手完成洗牌、抽牌、移动和落牌。完成由“现状、核心影响、发展建议”组成的三牌牌阵后，AI 会结合三张牌的牌面、正逆位和所选方向，生成一段相互关联的整体解读与现实行动建议。
 
-```powershell
-.\start-local.ps1
-```
+![AI手势塔罗封面](docs/submision/ai-gesture-tarot-cover-v2.png)
 
-脚本会读取 `.env` 中的 `PORT`（未配置时使用 `8090`），自动强制关闭占用该端口的程序，然后在当前窗口执行 `npm start`。请确认该端口没有被重要服务使用。按 `Ctrl+C` 可以停止项目。
+## 游戏介绍
 
-`.env` 示例：
+AI手势塔罗把 AI 放进了游戏的输入与结果生成环节，而不是将它作为独立的聊天功能附加在页面上。
 
-```dotenv
-PORT=8090
-DEEPSEEK_API_KEY=你的密钥
-```
+开始游戏后，玩家先选择感兴趣的解读方向，再通过摄像头进行非接触式操作。游戏识别张开手掌、捏合与握拳等动作，并将它们转换为牌桌中的移动、抓牌和落牌操作。玩家依次选出三张牌并放入对应位置，完成牌阵后进入 AI 解读阶段。
 
-如果 PowerShell 的执行策略阻止脚本运行，使用：
+AI 不会把三张牌拆成互不相关的固定释义，而是结合牌阵位置、牌面信息、正逆位和解读方向，分析三张牌之间的呼应、张力与发展变化，最终生成整体结论、逐牌说明、综合解读及行动建议。
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\start-local.ps1
-```
+> 游戏内容仅供娱乐与自我反思，不替代医疗、法律、投资或其他专业建议。
 
-## 受控 AI 星语（DeepSeek）
+## 核心玩法
 
-项目支持在抽牌后，根据固定主题、牌面、正逆位和本地标准牌义生成简短中文解读。浏览器不接触 API Key，也不接受自由文本问题；生成内容仅供娱乐与自我反思。
+1. 选择手势模式或鼠标模式。
+2. 选择本次解读方向。
+3. 等待牌组完成洗牌。
+4. 从完整的 78 张塔罗牌中依次抽取三张牌。
+5. 将三张牌放入“现状、核心影响、发展建议”三个牌位。
+6. AI 串联本次牌阵，生成完整解读与一项可执行的行动建议。
 
-要求 Node.js 20 或更高版本。安装并在 PowerShell 中启动：
+<p align="center"><strong><font color="red">⚠️ 图片待更新：请补充“选择操作模式与解读方向”的引导界面截图。</font></strong></p>
 
-```powershell
-npm install
-$env:DEEPSEEK_API_KEY='你的新 DeepSeek API Key'
-npm start
-```
+<p align="center"><strong><font color="red">⚠️ 图片待更新：请补充“使用手势抽取并放置三张牌”的核心玩法截图。</font></strong></p>
 
-然后访问 [http://localhost:8090](http://localhost:8090)。默认模型为 `deepseek-v4-pro`，使用非思考模式并将输出限制为 `max_tokens: 500`；可用 `$env:DEEPSEEK_MODEL` 覆盖，用 `$env:PORT` 修改端口。运行测试使用 `npm test`。
+<p align="center"><strong><font color="red">⚠️ 图片待更新：请补充“三牌汇聚并生成 AI 解读”的最终结果截图。</font></strong></p>
 
-不要把真实密钥写入仓库或前端代码。`.env.example` 仅列出变量名；服务直接读取进程环境变量。未配置密钥或上游不可用时，抽牌和固定牌义仍然可用。
+## 解读方向
 
-### EdgeOne Makers
+当前版本提供四种解读方向：
 
-项目在 `cloud-functions/api/reading.js` 提供 Makers Cloud Function。部署前请在 Makers 项目环境变量中配置 `DEEPSEEK_API_KEY`，可选配置 `DEEPSEEK_MODEL`；不要提交真实密钥。
+| 方向 | 游戏中的问题 |
+| --- | --- |
+| 感情 | 我的感情关系接下来会如何发展？ |
+| 事业 | 我的事业接下来会如何发展？ |
+| 心境 | 我当下的内在心境正在告诉我什么？ |
+| 灵性 | 我当前的灵性道路需要怎样的指引？ |
 
-使用 Makers CLI 本地运行：
+这些方向用于为本次三牌牌阵建立语境。AI 会使用审慎、非确定性的表达提供反思性解读，不会将结果描述为必然发生的事实。
 
-```bash
-PAGES_SOURCE=skills edgeone makers dev --name tarot-app --skip-env-sync
-```
+## 手势操作
 
-然后通过 [http://127.0.0.1:8088/](http://127.0.0.1:8088/) 访问。请勿使用 `file://` 打开页面，否则 Cloud Function 路由不可用。线上环境的 `DEEPSEEK_API_KEY` 和 `DEEPSEEK_MODEL` 应配置在 Makers 项目环境变量中，不要提交真实 `.env`。
+| 手势 | 游戏操作 |
+| --- | --- |
+| ✋ 张开手掌 | 移动游戏指针并寻找目标卡牌 |
+| 👌 捏合手指 | 抓取卡牌并拖动到牌阵位置 |
+| ✊ 握拳 | 将卡牌放入当前牌位并翻开 |
+| 🖱️ 鼠标 | 摄像头不可用时完成同样的抽牌流程 |
 
-<p align="center">
-  一款通过手势操控的沉浸式浏览器塔罗体验。<br>
-  借助 MediaPipe Hands 与 Three.js，在完整的 78 张塔罗牌中抽取、翻开并解读属于你的牌。
-</p>
+摄像头画面仅在浏览器本地用于识别手部动作。浏览器不会把摄像头画面发送给 AI 解读服务。
 
-<p align="center">
-  <img alt="JavaScript" src="https://img.shields.io/badge/JavaScript-ES6+-F7DF1E?logo=javascript&logoColor=000">
-  <img alt="Three.js" src="https://img.shields.io/badge/Three.js-WebGL-000?logo=threedotjs&logoColor=fff">
-  <img alt="MediaPipe" src="https://img.shields.io/badge/MediaPipe-Hands-00897B?logo=google&logoColor=fff">
-  <img alt="HTML5" src="https://img.shields.io/badge/HTML5-Single_Page-E34F26?logo=html5&logoColor=fff">
-</p>
+## AI 如何进入核心玩法
 
-![Ether Tarot 启动界面](docs/main.png)
+游戏包含两个连续的 AI 环节：
 
-## 项目简介
+1. **AI 理解玩家动作**：实时识别手的位置和动作，让玩家能够直接用手与三维牌桌交互。
+2. **AI 生成本局内容**：在三张牌全部落位后，结合牌阵结构、牌面、正逆位、关键词和所选方向，生成只属于本局的关联解读。
 
-Ether Tarot 将传统的塔罗抽牌仪式转化为无需触碰屏幕的互动体验。摄像头画面在浏览器本地通过 MediaPipe Hands 处理，识别结果会转换为一组简单的手势指令，并映射到 Three.js 三维场景中，让用户能够悬停、拿起、移动和翻开卡牌。
+这两个环节形成“动作识别 → 完成牌阵 → 生成反馈”的完整闭环。没有手势识别，玩家无法获得主要的非接触式操作体验；没有生成式解读，三张牌也不会形成随每局变化的整体叙事。
 
-项目将实时计算机视觉输入与 3D 渲染相结合，同时提供完整的鼠标操作模式；在摄像头不可用、权限被拒绝或不便使用手势时，仍然可以完成抽牌。
+## 主要功能
 
-## 体验展示
+- 完整的 78 张塔罗牌，包括 22 张大阿尔卡那和 56 张小阿尔卡那。
+- 三牌牌阵，对应现状、核心影响和发展建议。
+- 每张牌独立生成正位或逆位结果。
+- 感情、事业、心境和灵性四种解读方向。
+- AI 生成整体结论、逐牌说明、综合变化逻辑和行动建议。
+- 张开、捏合、握拳三种手势组成完整抽牌操作。
+- 鼠标备用模式，摄像头不可用时仍可体验完整流程。
+- 权杖、圣杯、宝剑和金币对应不同的元素粒子效果。
+- 首次进入时提供操作模式、主题选择及抽牌步骤引导。
+- AI 服务不可用时给出明确提示，不影响本地牌面与固定牌义展示。
 
-<table>
-  <tr>
-    <td width="50%" align="center"><strong>抽取卡牌</strong></td>
-    <td width="50%" align="center"><strong>查看结果</strong></td>
-  </tr>
-  <tr>
-    <td><img src="docs/mid-card.png" alt="通过手势抽取塔罗牌"></td>
-    <td><img src="docs/result.png" alt="翻开的塔罗牌及抽牌历史"></td>
-  </tr>
-  <tr>
-    <td align="center">捏合手指拿起卡牌，并在三维空间中移动。</td>
-    <td align="center">确认抽牌后，查看牌面方向和对应含义。</td>
-  </tr>
-</table>
-
-## 当前功能
-
-- **小牌四元素特效**——权杖使用火焰上扬与闪烁，圣杯使用水流环绕与波纹，宝剑使用风流螺旋与流线，金币使用土粒沉降与稳定环绕。逆位保持原元素，但流向反转且扰动更强；粒子数量会按设备能力在 800、250、80 三档间选择。22 张大牌的逐牌专属特效已记录为后续设计，本版本不套用通用元素效果。
-
-- **非接触式交互**——使用 MediaPipe 手部关键点驱动完整的抽牌流程。
-- **实时 3D 场景**——通过 Three.js 渲染牌组、灯光、雾效、粒子、卡牌移动与翻牌动画。
-- **三种核心手势**——张开手掌移动和悬停，捏合手指拿取卡牌，握拳确认抽牌。
-- **完整塔罗牌组**——包含 22 张大阿卡那与 56 张小阿卡那，共计 78 张牌。
-- **正位与逆位结果**——每次抽牌都会独立决定牌面方向并显示相应含义。
-- **鼠标备用模式**——无法使用摄像头时，可随时切换至鼠标操作。
-- **会话抽牌历史**——在页面历史区域查看本次会话已经抽出的牌及其方向。
-
-## 交互流程
+## AI 解读流程
 
 ```text
-摄像头画面
-    ↓
-MediaPipe 手部关键点
-    ↓
-手势分类（张开 / 捏合 / 握拳）
-    ↓
-归一化指针坐标
-    ↓
-Three.js 射线检测与卡牌状态
-    ↓
-抽取 → 移动 → 翻开 → 记录
+玩家选择解读方向
+        ↓
+通过手势完成三张牌的抽取与落位
+        ↓
+整理牌阵位置、牌名、正逆位及相关牌义
+        ↓
+AI 分析三张牌之间的联系与发展变化
+        ↓
+返回整体结论、逐牌解读、综合解读与行动建议
 ```
 
-| 操作方式 | 对应动作 |
-| --- | --- |
-| ✋ 张开手掌 | 移动指针并悬停在牌组上 |
-| 👌 捏合手指 | 拿起并拖动卡牌 |
-| ✊ 握拳 | 确认选择并翻开解读 |
-| 🖱️ 鼠标模式 | 在不使用摄像头时移动、按下、拖动和释放 |
+AI 输出经过固定结构校验，并遵循以下原则：
+
+- 不宣称能够确定未来，不使用“注定”“一定会”等绝对表达。
+- 不制造恐惧，不虚构玩家未提供的经历。
+- 不提供医疗、法律或投资等高风险专业结论。
+- 行动建议保持现实、温和且可以执行。
 
 ## 技术实现
 
-### 手势输入
-
-MediaPipe Hands 通过浏览器摄像头追踪一只手。程序计算特定手部关键点之间的距离，将其转换为确定的手势状态，再将手掌位置归一化为 Three.js 场景中的指针坐标。
-
-### 3D 交互
-
-Three.js 的射线检测器会把手势指针映射到场景对象。应用内部维护剩余牌组、当前悬停卡牌、手持卡牌、输入模式、动画锁定状态和抽牌结果等交互状态。
-
-### 视觉反馈
-
-灯光、指数雾效、叠加粒子、卡牌旋转和翻牌过渡用于强化不同交互阶段。界面会分别显示摄像头状态、已识别手势、剩余牌数、当前牌义和抽牌历史。
-
-## 技术栈
-
 | 技术 | 用途 |
 | --- | --- |
-| JavaScript / HTML / CSS | 应用状态、界面与交互逻辑 |
-| [Three.js](https://threejs.org/) | WebGL 场景、几何体、材质、动画与射线检测 |
-| [MediaPipe Hands](https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker) | 实时手部关键点检测 |
-| 浏览器媒体 API | 摄像头访问与视频帧处理 |
-| PowerShell `HttpListener` | 轻量级本地开发服务器 |
+| JavaScript / HTML / CSS | 游戏流程、界面状态与交互逻辑 |
+| Three.js | 三维牌桌、卡牌、灯光、动画与粒子效果 |
+| MediaPipe Hands | 浏览器本地手部关键点与手势识别 |
+| Anime.js | 洗牌、界面过渡与结果呈现动画 |
+| DeepSeek API | 生成结构化的三牌关联解读 |
+| Node.js | 本地静态服务与 AI API 代理 |
+| EdgeOne Makers | 在线环境中的前端托管与 Cloud Functions |
 
 ## 本地运行
 
 ### 环境要求
 
-- 支持 WebGL 和摄像头访问的现代浏览器
-- PowerShell，或已安装 Node.js 与 npm
-- 手势模式需要可用的摄像头
+- Node.js 20 或更高版本
+- 支持 WebGL 的现代浏览器
+- 手势模式需要摄像头权限
+- AI 解读需要 DeepSeek API Key
 
-### 1. 克隆项目
-
-```bash
-git clone https://github.com/Fengfengex/tarot-app.git
-cd tarot-app
-```
-
-### 2. 启动本地服务器
-
-使用项目内置的 PowerShell 服务器：
-
-```powershell
-.\server.ps1
-```
-
-随后访问 [http://localhost:8080](http://localhost:8080)。
-
-也可以使用 Node.js：
+### 安装与配置
 
 ```bash
 npm install
+```
+
+在项目根目录创建 `.env`：
+
+```dotenv
+PORT=8090
+DEEPSEEK_API_KEY=你的密钥
+# 可选：覆盖默认模型
+DEEPSEEK_MODEL=deepseek-v4-pro
+```
+
+不要把真实密钥提交到仓库或写入前端代码。浏览器只访问项目自己的 API 路由，不会接触 API Key。
+
+### 启动项目
+
+```bash
 npm start
 ```
 
-浏览器提示时请允许摄像头访问。如果摄像头不可用，可通过左上角控制区域切换至鼠标模式。
+然后访问 [http://localhost:8090](http://localhost:8090)。摄像头 API 需要安全上下文，请使用 `localhost` 或 HTTPS，不要直接通过 `file://` 打开 `index.html`。
 
-> 摄像头 API 通常要求页面运行在安全上下文中。请通过 `localhost` 或 HTTPS 访问项目，不要直接双击打开 `index.html`。
+Windows 用户也可以运行：
 
-## 当前开发状态
+```powershell
+.\start-local.ps1
+```
 
-当前仓库中的 JavaScript 单页版本可以运行，核心的 3D 抽牌、手势识别、鼠标备用操作、正逆位结果和抽牌历史已经实现。
+该脚本会读取 `.env` 中的 `PORT`，并在当前窗口启动项目。
 
-仓库同时已经完成下一版体验的设计文档与实施计划，但新版代码尚未开始迁移。规划中的 Vite、TypeScript、自动化测试、模块化状态机、完整中文牌义数据、稳定手势过滤、响应式界面和自动部署等能力，均不属于当前版本的已完成功能。
+## EdgeOne Makers 本地开发
 
-相关文档：
+项目提供以下 Cloud Functions：
 
-- [新版体验设计](docs/superpowers/specs/2026-08-01-tarot-experience-redesign-design.md)
-- [新版实施计划](docs/superpowers/plans/2026-08-01-tarot-experience-redesign.md)
+- `cloud-functions/api/reading.js`：单牌 AI 解读接口。
+- `cloud-functions/api/prophecy.js`：当前三牌牌阵的 AI 关联解读接口。
 
-## 后续路线图
+在 Makers 项目环境变量中配置 `DEEPSEEK_API_KEY`，可选配置 `DEEPSEEK_MODEL`，然后运行：
 
-后续开发将按照现有实施计划逐步推进：
+```bash
+PAGES_SOURCE=skills edgeone makers dev --name tarot-app --skip-env-sync
+```
 
-1. 将项目迁移到 Vite、TypeScript，并建立 Vitest 与 ESLint 验证流程。
-2. 补全 78 张 Rider–Waite 塔罗牌的中英文名称及正逆位中文牌义。
-3. 使用有限状态机统一手势、鼠标和触摸输入的抽牌规则。
-4. 提升手势稳定性，加入连续帧确认、停留时间判断和指针平滑。
-5. 重建卡牌轮盘、翻牌、粒子归档与响应式中文界面。
-6. 增加异常恢复、WebGL 降级方案、静态部署与跨设备验收。
+通过 [http://127.0.0.1:8088/](http://127.0.0.1:8088/) 访问本地环境。线上环境同样需要在项目环境变量中配置密钥。
+
+## 测试与构建检查
+
+运行完整测试：
+
+```bash
+npm test
+```
+
+运行语法与构建检查：
+
+```bash
+npm run build
+```
 
 ## 项目结构
 
 ```text
 tarot-app/
-├── index.html          # Three.js 场景、手势流程、界面和应用状态
-├── tarot_img/          # 大阿卡那与小阿卡那牌面资源
-├── docs/               # 项目截图、设计文档与实施计划
-├── server.ps1          # 轻量级 localhost 服务器
-├── package.json        # 项目元数据和开发命令
-└── README.md           # 中文项目说明
+├── cloud-functions/api/       # EdgeOne Makers AI 接口
+├── docs/                      # 项目文档、参赛材料与待更新截图
+├── public/                    # 本地手势识别模型资源
+├── src/client/                # 引导、动画、AI 请求与牌阵 Prompt
+├── src/data/                  # 78 张塔罗牌数据
+├── src/server/                # AI 服务、校验与限流逻辑
+├── tarot_img/                 # 塔罗牌面资源
+├── tests/                     # 客户端、服务端与冒烟测试
+├── index.html                 # 当前游戏入口与三维场景
+├── server.mjs                # Node.js 本地服务器
+└── package.json              # 项目命令与依赖
 ```
 
 ## 项目仓库
 
-源代码：[github.com/Fengfengex/tarot-app](https://github.com/Fengfengex/tarot-app)
+源代码：[github.com/ythere-y/tarot-app](https://github.com/ythere-y/tarot-app)
 
 ---
 
-<p align="center">
-  本项目用于探索手势驱动界面、实时图形渲染与浏览器互动体验。
-</p>
+本项目用于探索 AI 手势输入、生成式内容与游戏核心循环的结合方式。
