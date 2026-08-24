@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import * as interactionState from "../src/interaction-state.mjs";
+import * as interactionState from "../src/interaction-state.js";
 
 const {
   createInteractionState,

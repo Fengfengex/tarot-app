@@ -9,7 +9,7 @@
         * { box-sizing:border-box; }
         [hidden] { display:none!important; }
         body { margin:0; overflow:hidden; background:radial-gradient(circle at 50% 44%,#17140d 0,#080806 48%,#030303 100%); font-family:Inter,ui-sans-serif,system-ui,sans-serif; color:var(--paper); -webkit-user-select:none; user-select:none; }
-        body,body * { cursor:none!important; }
+        html.custom-cursor-enabled body,html.custom-cursor-enabled body * { cursor:none!important; }
         #custom-cursor { position:fixed; z-index:100; left:0; top:0; width:18px; height:18px; margin:-9px 0 0 -9px; pointer-events:none; border:2px solid #d8b96f; border-radius:50%; box-shadow:0 0 12px rgba(216,185,111,.5); opacity:0; transition:opacity .12s ease,border-color .12s ease,background .12s ease; will-change:transform; }
         #custom-cursor.is-visible { opacity:1; }
         #custom-cursor.is-pressed { border-color:#f2eee4; background:rgba(242,238,228,.16); }
@@ -250,7 +250,7 @@
         import { createOnboardingController } from './src/client/onboarding.js';
         import { createShuffleSequence } from './src/client/shuffle-sequence.js';
         import { depthForApparentScale } from './src/client/card-presentation.js';
-        import { findNearestAvailableSlot } from './src/interaction-state.mjs';
+        import { findNearestAvailableSlot } from './src/interaction-state.js';
 
         const tarotDatasetResponse = await fetch('./src/data/tarotoo-cards.json');
         if (!tarotDatasetResponse.ok) throw new Error('Unable to load the tarot meanings dataset');
@@ -1559,6 +1559,7 @@
         }
 
         animate();
+        document.documentElement.classList.add('custom-cursor-enabled');
 
     </script>
 </body>
