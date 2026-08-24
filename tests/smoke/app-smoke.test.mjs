@@ -80,7 +80,7 @@ test('app exposes four Tarotoo topics and AI reading contract', async () => {
     assert.match(html, /renderProphecyResult\(payload\)/);
     assert.match(html, /requestAnimationFrame\(\(\) => requestAnimationFrame\(\(\) => window\.location\.reload\(\)\)\)/);
     assert.doesNotMatch(html, /查看发送给 LLM 的完整 Prompt|id="prophecy-prompt"/);
-    assert.match(html, /body,body \*\s*\{\s*cursor:none!important;/);
+    assert.match(html, /html\.custom-cursor-enabled body,html\.custom-cursor-enabled body \*\s*\{\s*cursor:none!important;/);
     assert.match(html, /body\s*\{[^}]*-webkit-user-select:none;[^}]*user-select:none;/);
     assert.match(html, /customCursor\.style\.transform = `translate3d\(\$\{e\.clientX\}px,\$\{e\.clientY\}px,0\)`/);
     assert.match(html, /cursorMesh\.visible = mode !== 'mouse'/);
@@ -114,6 +114,9 @@ test('app exposes four Tarotoo topics and AI reading contract', async () => {
     const placementSource = html.slice(html.indexOf('function placeHeldCard'), html.indexOf('function updateCardAnimations'));
     assert.doesNotMatch(placementSource, /requestReading|fetch\(/);
     assert.match(html, /elementEffect\.update\(dt\)/);
+    assert.match(html, /elementEffect\.prepare\(draw\.data, draw\.isReversed \? 'reversed' : 'upright', mesh\.position, mesh\)/);
+    assert.match(html, /elementEffect\.reveal\(card\)/);
+    assert.match(html, /elementEffect\.settle\(card\)/);
     assert.match(html, /suit: suit \|\| null/);
     const response = await fetch(`${base}/api/reading`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ topic: 'general', cardName: 'The Fool', orientation: 'upright', standardMeaning: '新的开始。' }) });
     assert.deepEqual(await response.json(), expected);
@@ -127,6 +130,28 @@ test('drawn card title uses the legacy bold Courier face', async () => {
   try {
     const html = await (await fetch(base)).text();
     assert.match(html, /#result-title\s*\{[^}]*font-family:'Courier New',Courier,monospace;[^}]*font-weight:bold;/);
+  } finally { await new Promise((resolve) => server.close(resolve)); }
+});
+
+test('serves browser modules with a JavaScript MIME type and keeps the native cursor as a startup fallback', async () => {
+  const server = createAppServer();
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  try {
+    const html = await (await fetch(base)).text();
+    const interactionModule = await fetch(`${base}/src/interaction-state.js`);
+
+    assert.equal(interactionModule.status, 200);
+    assert.match(interactionModule.headers.get('content-type') ?? '', /^text\/javascript/);
+    assert.match(html, /from ['"]\.\/src\/interaction-state\.js['"]/);
+    assert.doesNotMatch(html, /from ['"]\.\/src\/interaction-state\.mjs['"]/);
+    assert.match(html, /html\.custom-cursor-enabled body,html\.custom-cursor-enabled body \*\s*\{\s*cursor:none!important;/);
+    assert.match(html, /document\.documentElement\.classList\.add\('custom-cursor-enabled'\)/);
+    assert.doesNotMatch(html, /(?:^|[}\s])body,body \*\s*\{\s*cursor:none!important;/);
+    assert.ok(
+      html.lastIndexOf('animate();') < html.indexOf("document.documentElement.classList.add('custom-cursor-enabled')"),
+      'the custom cursor should only replace the native cursor after the first animation initialization succeeds',
+    );
   } finally { await new Promise((resolve) => server.close(resolve)); }
 });
 
